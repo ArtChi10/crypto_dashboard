@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>История запусков | Crypto Dashboard</title>
+</head>
+<body>
+    <main>
+        <h1>История запусков</h1>
+        <p><a href="/">← На главную</a></p>
+
+        {% if page_obj.object_list %}
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">name</th>
+                        <th scope="col">status</th>
+                        <th scope="col">symbols</th>
+                        <th scope="col">interval</th>
+                        <th scope="col">target_horizon</th>
+                        <th scope="col">started_at</th>
+                        <th scope="col">finished_at</th>
+                        <th scope="col">created_at</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in page_obj.object_list %}
+                        <tr>
+                            <td>{{ run.id }}</td>
+                            <td><a href="{% url 'runs:detail' run.id %}">{{ run.name }}</a></td>
+                            <td>{{ run.get_status_display }}</td>
+                            <td>
+                                {% if run.symbols_json %}
+                                    {{ run.symbols_json|join:", " }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ run.interval|default:"-" }}</td>
+                            <td>{{ run.target_horizon|default_if_none:"-" }}</td>
+                            <td>
+                                {% if run.started_at %}
+                                    {{ run.started_at|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if run.finished_at %}
+                                    {{ run.finished_at|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ run.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+                <nav aria-label="Пагинация запусков">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">Первая</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                    {% endif %}
+
+                    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <p>Запусков pipeline пока нет. Когда metadata DB получит записи PipelineRun, они появятся здесь.</p>
+        {% endif %}
+    </main>
+</body>
+</html>
