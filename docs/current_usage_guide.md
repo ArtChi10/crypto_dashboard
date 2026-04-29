@@ -41,6 +41,7 @@ media/ = большие файлы datasets, models, reports
 - `DataCleaner` для очистки OHLCV-данных.
 - `FeatureBuilder` для построения признаков.
 - `TargetBuilder` для построения target-колонки.
+- `DatasetPreparationService` для ручной подготовки processed/final datasets из Python.
 - `SplitService` для временного train/valid/test split.
 - `Evaluator` для расчета classification metrics.
 - `BaselineTrainer` на базе `LogisticRegression`.
@@ -234,8 +235,8 @@ runner и сам не обучает модели.
 ```
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
-targets, split, trainers, evaluator, `BaselineTrainingService` и
-`CatBoostTrainingService`.
+targets, split, trainers, evaluator, `DatasetPreparationService`,
+`BaselineTrainingService` и `CatBoostTrainingService`.
 
 ## Как запустить Ruff
 
@@ -256,6 +257,25 @@ Lint:
 ```powershell
 .crypto\Scripts\python.exe -m ruff format .
 ```
+
+## Как вручную проверить DatasetPreparationService
+
+`DatasetPreparationService` можно запустить из Python на маленьком synthetic
+OHLCV dataset. Пример ниже не использует UI и не создает `DatasetArtifact` в
+SQLite. Он чистит raw данные, строит features и target, сохраняет processed и
+final datasets в parquet.
+
+```powershell
+.crypto\Scripts\python.exe -c "from pathlib import Path; import pandas as pd; from mlcore.repositories import ArtifactRepository; from mlcore.services import DatasetPreparationService; df = pd.DataFrame({'timestamp': pd.date_range('2024-01-01', periods=60, freq='h'), 'open': range(1, 61), 'high': range(2, 62), 'low': range(0, 60), 'close': range(1, 61), 'volume': range(100, 160), 'symbol': ['BTCUSDT'] * 60}); service = DatasetPreparationService(artifact_repository=ArtifactRepository(Path('tmp_artifacts/manual_dataset_preparation_check'))); result = service.prepare(df, run_id=1, horizon=3, symbol='BTCUSDT'); print('processed_path=', result.processed_path); print('final_path=', result.final_path); print('rows=', result.raw_rows, result.processed_rows, result.final_rows); print('features=', result.feature_columns); print('target=', result.target_column)"
+```
+
+Ожидаемый смысл результата:
+
+- `processed_path` показывает путь к очищенному `.parquet` dataset;
+- `final_path` показывает путь к `.parquet` dataset с features и target;
+- `rows` показывает размеры raw, processed и final datasets;
+- `features` содержит feature columns, построенные `FeatureBuilder`;
+- `target` равен `target`.
 
 ## Как вручную проверить BaselineTrainingService
 
@@ -398,6 +418,8 @@ http://127.0.0.1:8000/admin/
 - Реальные metrics в UI пока не пишутся автоматически.
 - Model artifacts через UI пока не создаются.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
+- `DatasetPreparationService` можно запускать вручную из Python, но UI пока не
+  вызывает его автоматически.
 - `BaselineTrainingService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
 - `CatBoostTrainingService` можно запускать вручную из Python, но UI пока не

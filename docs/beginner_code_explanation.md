@@ -162,6 +162,25 @@ OHLCV - это обычные свечные данные:
 
 Последние строки удаляются, потому что для них еще нет будущей цены.
 
+## Что делает DatasetPreparationService
+
+`DatasetPreparationService` соединяет подготовку датасета в один ручной
+сценарий для Python-кода.
+
+Он делает так:
+
+1. Получает raw OHLCV `DataFrame`.
+2. Чистит его через `DataCleaner`.
+3. Сохраняет processed dataset в parquet через `DatasetRepository`.
+4. Строит features через `FeatureBuilder`.
+5. Строит `target` через `TargetBuilder`.
+6. Сохраняет final dataset в parquet через `DatasetRepository`.
+7. Возвращает результат: пути к processed/final файлам, количество строк,
+   feature columns и имя target column.
+
+Важно: этот service не скачивает данные, не обучает модели и не пишет metadata
+в SQLite. Он только готовит файлы датасетов.
+
 ## Зачем нужен SplitService
 
 `SplitService` делит dataset на три части:
@@ -340,6 +359,8 @@ raw data
 - `clean data`: данные после `DataCleaner`;
 - `features`: таблица после `FeatureBuilder`;
 - `target`: колонка ответа после `TargetBuilder`;
+- `dataset preparation`: ручной service, который сохраняет processed и final
+  datasets;
 - `split`: train/valid/test части после `SplitService`;
 - `train`: обучение модели через trainer;
 - `evaluate`: расчет metrics через `Evaluator`;
@@ -357,6 +378,7 @@ raw data
 - Очистка данных.
 - Построение features.
 - Построение target.
+- Ручной `DatasetPreparationService`.
 - Временной split.
 - Метрики качества.
 - Baseline trainer.
