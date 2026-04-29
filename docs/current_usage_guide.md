@@ -50,6 +50,7 @@ media/ = большие файлы datasets, models, reports
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
+- `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
 
 ## Что еще не работает
 
@@ -237,7 +238,8 @@ runner и сам не обучает модели.
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
 targets, split, trainers, evaluator, `DatasetPreparationService`,
-`BaselineTrainingService`, `CatBoostTrainingService` и `FullPipelineService`.
+`BaselineTrainingService`, `CatBoostTrainingService`, `FullPipelineService` и
+`RunPersistenceService`.
 
 ## Как запустить Ruff
 
@@ -316,6 +318,25 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
 - `baseline=True` означает, что baseline-модель обучилась и сохранилась;
 - `catboost=True` означает, что CatBoost-модель обучилась и сохранилась;
 - `baseline_metrics` и `catboost_metrics` содержат classification metrics.
+
+## Как сохранять metadata результата pipeline
+
+`RunPersistenceService` принимает существующий `PipelineRun` и результат
+`FullPipelineService`. Он не запускает pipeline, не обучает модели и не считает
+metrics. Его задача только сохранить metadata в Django models:
+
+- `DatasetArtifact` для processed dataset;
+- `DatasetArtifact` для final dataset;
+- `ModelArtifact` и `MetricSnapshot` для baseline, если baseline обучался;
+- `ModelArtifact` и `MetricSnapshot` для CatBoost, если CatBoost обучался.
+
+Сервис использует `transaction.atomic()`, чтобы связанные metadata-записи
+создавались одной транзакцией. `ReportArtifact` пока не создается, потому что
+графиков в этом pipeline layer еще нет.
+
+Для `file_path` действует такое правило: если путь абсолютный и лежит внутри
+`MEDIA_ROOT`, сохраняется путь относительно `MEDIA_ROOT`; иначе сохраняется
+строковое представление пути как есть.
 
 ## Как вручную проверить CatBoostTrainingService
 
@@ -446,4 +467,6 @@ http://127.0.0.1:8000/admin/
 - `CatBoostTrainingService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
 - `FullPipelineService` можно запускать вручную из Python, но UI пока не
+  вызывает его автоматически.
+- `RunPersistenceService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.

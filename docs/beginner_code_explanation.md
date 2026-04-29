@@ -331,6 +331,32 @@ baseline-модели обучает `CatBoostClassifier`.
 `MetricSnapshot` или `ModelArtifact` в SQLite. Он только связывает уже готовые
 ML-компоненты в один Python-сценарий.
 
+## Что делает RunPersistenceService
+
+`RunPersistenceService` - это тонкий мост между ML-результатом и Django
+metadata.
+
+Он получает:
+
+- уже существующий `PipelineRun`;
+- результат `FullPipelineService`.
+
+После этого он создает metadata-записи:
+
+- `DatasetArtifact` для processed dataset;
+- `DatasetArtifact` для final dataset;
+- `ModelArtifact` для baseline, если baseline запускался;
+- `MetricSnapshot` для baseline, если baseline запускался;
+- `ModelArtifact` для CatBoost, если CatBoost запускался;
+- `MetricSnapshot` для CatBoost, если CatBoost запускался.
+
+Он не обучает модели, не строит признаки, не скачивает данные и не меняет UI.
+Он только записывает в SQLite ссылки на уже созданные файлы и уже посчитанные
+metrics.
+
+Если путь к файлу абсолютный и находится внутри `MEDIA_ROOT`, service сохраняет
+его относительно `MEDIA_ROOT`. Остальные пути сохраняются строкой как есть.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -406,6 +432,7 @@ raw data
 - Ручной `BaselineTrainingService`.
 - Ручной `CatBoostTrainingService`.
 - Ручной `FullPipelineService`.
+- Ручной `RunPersistenceService`.
 
 ## Будет позже
 
