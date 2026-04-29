@@ -51,6 +51,7 @@ media/ = большие файлы datasets, models, reports
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
+- `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
 
 ## Что еще не работает
 
@@ -238,8 +239,8 @@ runner и сам не обучает модели.
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
 targets, split, trainers, evaluator, `DatasetPreparationService`,
-`BaselineTrainingService`, `CatBoostTrainingService`, `FullPipelineService` и
-`RunPersistenceService`.
+`BaselineTrainingService`, `CatBoostTrainingService`, `FullPipelineService`,
+`RunPersistenceService` и `RunPipelineUseCase`.
 
 ## Как запустить Ruff
 
@@ -337,6 +338,26 @@ metrics. Его задача только сохранить metadata в Django 
 Для `file_path` действует такое правило: если путь абсолютный и лежит внутри
 `MEDIA_ROOT`, сохраняется путь относительно `MEDIA_ROOT`; иначе сохраняется
 строковое представление пути как есть.
+
+## Как RunPipelineUseCase управляет одним запуском
+
+`RunPipelineUseCase` связывает `PipelineRun`, raw `DataFrame`,
+`FullPipelineService` и `RunPersistenceService`.
+
+Сценарий такой:
+
+1. Перевести `PipelineRun.status` в `running`.
+2. Заполнить `started_at` и очистить `error_message`.
+3. Запустить `FullPipelineService`.
+4. Сохранить artifacts и metrics metadata через `RunPersistenceService`.
+5. Перевести `PipelineRun.status` в `success` и заполнить `finished_at`.
+
+Если внутри pipeline возникает ошибка, use case переводит run в `failed`,
+записывает короткий текст ошибки в `error_message`, заполняет `finished_at` и
+повторно выбрасывает исключение.
+
+Это все еще ручной Python use case. UI пока не вызывает его автоматически и
+Binance download в нем не реализован.
 
 ## Как вручную проверить CatBoostTrainingService
 
@@ -469,4 +490,6 @@ http://127.0.0.1:8000/admin/
 - `FullPipelineService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
 - `RunPersistenceService` можно запускать вручную из Python, но UI пока не
+  вызывает его автоматически.
+- `RunPipelineUseCase` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.

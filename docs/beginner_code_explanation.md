@@ -357,6 +357,34 @@ metrics.
 Если путь к файлу абсолютный и находится внутри `MEDIA_ROOT`, service сохраняет
 его относительно `MEDIA_ROOT`. Остальные пути сохраняются строкой как есть.
 
+## Что делает RunPipelineUseCase
+
+`RunPipelineUseCase` - это сценарий одного запуска `PipelineRun`.
+
+Он соединяет:
+
+- запись `PipelineRun` из Django;
+- raw OHLCV `DataFrame`;
+- `FullPipelineService`;
+- `RunPersistenceService`.
+
+Когда все хорошо, он делает так:
+
+1. Ставит run в статус `running`.
+2. Записывает `started_at`.
+3. Очищает старый `error_message`.
+4. Запускает полный pipeline.
+5. Сохраняет metadata artifacts и metrics.
+6. Ставит run в статус `success`.
+7. Записывает `finished_at`.
+
+Если что-то падает, он ставит run в статус `failed`, записывает короткую ошибку
+в `error_message`, заполняет `finished_at` и снова выбрасывает ошибку. Так код,
+который вызвал use case, видит проблему, а в базе остается понятный failed run.
+
+Важно: use case не скачивает данные из Binance и не подключен к UI. Raw
+`DataFrame` ему должен передать внешний код.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -433,6 +461,7 @@ raw data
 - Ручной `CatBoostTrainingService`.
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
+- Ручной `RunPipelineUseCase`.
 
 ## Будет позже
 
