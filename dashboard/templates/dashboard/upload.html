@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Загрузка raw CSV | Crypto Dashboard</title>
+</head>
+<body>
+    <main>
+        <h1>Загрузка raw OHLCV CSV</h1>
+        <p><a href="{% url 'dashboard:home' %}">← На Dashboard</a></p>
+
+        <section aria-label="CSV upload">
+            <h2>Новый запуск из CSV</h2>
+            <p>Ожидаемые колонки: timestamp, open, high, low, close, volume, symbol.</p>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {{ form.non_field_errors }}
+
+                <p>
+                    {{ form.csv_file.label_tag }}<br>
+                    {{ form.csv_file }}
+                    {{ form.csv_file.errors }}
+                </p>
+
+                <p>
+                    {{ form.symbol.label_tag }}<br>
+                    {{ form.symbol }}
+                    {{ form.symbol.errors }}
+                </p>
+
+                <p>
+                    {{ form.interval.label_tag }}<br>
+                    {{ form.interval }}
+                    {{ form.interval.errors }}
+                </p>
+
+                <p>
+                    {{ form.start_date.label_tag }}<br>
+                    {{ form.start_date }}
+                    {{ form.start_date.errors }}
+                </p>
+
+                <p>
+                    {{ form.end_date.label_tag }}<br>
+                    {{ form.end_date }}
+                    {{ form.end_date.errors }}
+                </p>
+
+                <p>
+                    {{ form.target_horizon.label_tag }}<br>
+                    {{ form.target_horizon }}
+                    {{ form.target_horizon.errors }}
+                </p>
+
+                <p>
+                    {{ form.train_baseline }}
+                    {{ form.train_baseline.label_tag }}
+                    {{ form.train_baseline.errors }}
+                </p>
+
+                <p>
+                    {{ form.train_catboost }}
+                    {{ form.train_catboost.label_tag }}
+                    {{ form.train_catboost.errors }}
+                </p>
+
+                <button type="submit">Загрузить CSV и запустить pipeline</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

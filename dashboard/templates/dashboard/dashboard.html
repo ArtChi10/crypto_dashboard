@@ -14,6 +14,7 @@
             <h2>Статус</h2>
             <p>Всего запусков: {{ total_runs }}</p>
             <p><a href="/runs/">История запусков</a></p>
+            <p><a href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a></p>
         </section>
 
         <section aria-label="Create pipeline run">

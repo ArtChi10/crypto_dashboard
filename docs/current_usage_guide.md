@@ -10,8 +10,9 @@
 который должен прогнозировать направление цены криптовалют.
 
 Сейчас проект умеет хранить metadata о запусках, показывать простые страницы
-Dashboard и Runs, создавать запись `PipelineRun` через UI, хранить ссылки на
-dataset/model/report artifacts и запускать отдельные ML-компоненты из Python.
+Dashboard и Runs, создавать запись `PipelineRun` через UI, загружать raw OHLCV
+CSV через `/upload/`, хранить ссылки на dataset/model/report artifacts и
+запускать отдельные ML-компоненты из Python.
 
 Главное правило хранения:
 
@@ -36,6 +37,7 @@ media/ = большие файлы datasets, models, reports
 - История запусков `/runs/`.
 - Детальная страница запуска `/runs/<id>/`.
 - Форма создания `PipelineRun` на главной странице.
+- Страница `/upload/` для ручной загрузки raw OHLCV CSV и синхронного запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
 - `DataCleaner` для очистки OHLCV-данных.
@@ -56,12 +58,10 @@ media/ = большие файлы datasets, models, reports
 ## Что еще не работает
 
 - Нет загрузчика данных из Binance.
-- Нет кнопки UI, которая запускает полный pipeline.
-- Нет полного pipeline через UI.
 - Форма на главной странице создает только metadata-запись `PipelineRun`.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- Реальные metrics в UI пока не записываются автоматически.
-- Model artifacts через UI пока не создаются.
+- Главная форма не запускает полный pipeline; для ручного запуска используйте `/upload/`.
+- Нет async/background queue: CSV upload запускает pipeline синхронно.
 
 ## Окружение
 
@@ -146,6 +146,7 @@ http://127.0.0.1:8000/
 - название проекта;
 - количество запусков;
 - ссылка на историю `/runs/`;
+- ссылка на ручную загрузку `/upload/`;
 - форма создания нового `PipelineRun`;
 - таблица последних запусков.
 
@@ -174,6 +175,40 @@ http://127.0.0.1:8000/
 
 Важно: сейчас UI не скачивает данные, не строит features, не обучает модель и
 не записывает metrics. Он создает metadata-запись запуска.
+
+## Как загрузить raw CSV и запустить pipeline
+
+1. Откройте страницу:
+
+```text
+http://127.0.0.1:8000/upload/
+```
+
+2. Загрузите CSV с колонками:
+
+```text
+timestamp, open, high, low, close, volume, symbol
+```
+
+3. Заполните metadata:
+
+- `symbol`;
+- `interval`;
+- `start_date`;
+- `end_date`;
+- `target_horizon`;
+- `train_baseline`;
+- `train_catboost`.
+
+4. Нажмите `Загрузить CSV и запустить pipeline`.
+
+Для MVP запуск выполняется синхронно прямо во время POST-запроса. После успеха
+страница перенаправляет на `/runs/<id>/`, где видны созданные
+`DatasetArtifact`, `ModelArtifact` и `MetricSnapshot`.
+
+Если CSV некорректный или pipeline падает, страница тоже перенаправляет на
+`/runs/<id>/`, а `PipelineRun.status` становится `Failed` и ошибка записывается
+в `PipelineRun.error_message`.
 
 ## Как открыть /runs/ и /runs/<id>/
 
@@ -476,20 +511,8 @@ http://127.0.0.1:8000/admin/
 ## Current limitations
 
 - Binance download еще нет.
-- Full pipeline button еще нет.
-- Full pipeline через UI еще не реализован.
-- Реальные metrics в UI пока не пишутся автоматически.
-- Model artifacts через UI пока не создаются.
+- Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- `DatasetPreparationService` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
-- `BaselineTrainingService` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
-- `CatBoostTrainingService` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
-- `FullPipelineService` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
-- `RunPersistenceService` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
-- `RunPipelineUseCase` можно запускать вручную из Python, но UI пока не
-  вызывает его автоматически.
+- Главная Dashboard-форма остается metadata-only.
+- CSV upload запускает pipeline синхронно, без async queue.
+- `RunPipelineUseCase` подключен к `/upload/`, но не к основной Dashboard-форме.

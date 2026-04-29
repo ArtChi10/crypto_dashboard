@@ -31,6 +31,7 @@ Django здесь не обучает модель сам. Он дает удо�
 
 - краткий статус;
 - форма создания нового `PipelineRun`;
+- ссылка на ручную загрузку raw CSV `/upload/`;
 - список последних запусков.
 
 `runs` отвечает за страницы запусков:
@@ -56,8 +57,12 @@ Django здесь не обучает модель сам. Он дает удо�
 - когда он стартовал и закончился;
 - была ли ошибка.
 
-Сейчас создание `PipelineRun` через UI не запускает полный pipeline. Оно только
-создает metadata-запись со статусом `Created`.
+Сейчас создание `PipelineRun` через главную Dashboard-форму не запускает полный
+pipeline. Оно только создает metadata-запись со статусом `Created`.
+
+Для ручного запуска pipeline через UI есть отдельная страница `/upload/`: она
+принимает raw OHLCV CSV, создает `PipelineRun`, запускает pipeline и показывает
+результат на странице запуска.
 
 ## Что такое ArtifactRepository
 
@@ -259,7 +264,8 @@ train/valid данные.
 но сам не делает split, не считает metrics и не сохраняет artifact.
 
 Для полного ручного сценария из Python теперь есть `CatBoostTrainingService`.
-UI пока не запускает CatBoost training автоматически.
+Страница `/upload/` может запустить CatBoost training через общий
+`RunPipelineUseCase`.
 
 ## Что такое ModelRepository
 
@@ -289,7 +295,8 @@ CatBoost `.cbm` сохраняется через native метод CatBoost `sa
 
 Это уже рабочий service для Python-кода.
 
-Но сейчас он не подключен к Dashboard. UI не вызывает его автоматически.
+Сам по себе service не подключен к Dashboard-форме напрямую. В UI его вызывает
+общий `RunPipelineUseCase` на странице `/upload/`.
 
 ## Что делает CatBoostTrainingService
 
@@ -309,7 +316,8 @@ baseline-модели обучает `CatBoostClassifier`.
 
 Это уже рабочий service для Python-кода.
 
-Но сейчас он не подключен к Dashboard. UI не вызывает его автоматически.
+Сам по себе service не подключен к Dashboard-форме напрямую. В UI его вызывает
+общий `RunPipelineUseCase` на странице `/upload/`.
 
 ## Что делает FullPipelineService
 
@@ -382,8 +390,28 @@ metrics.
 в `error_message`, заполняет `finished_at` и снова выбрасывает ошибку. Так код,
 который вызвал use case, видит проблему, а в базе остается понятный failed run.
 
-Важно: use case не скачивает данные из Binance и не подключен к UI. Raw
-`DataFrame` ему должен передать внешний код.
+Важно: use case не скачивает данные из Binance. Страница `/upload/` читает CSV
+в raw `DataFrame` и передает его в этот use case.
+
+## Что делает CSV upload page
+
+Страница `/upload/` - это первый простой UI-вход в реальный pipeline.
+
+Она показывает форму:
+
+- CSV file;
+- symbol;
+- interval;
+- start_date;
+- end_date;
+- target_horizon;
+- train_baseline;
+- train_catboost.
+
+После отправки формы Django читает CSV через pandas, создает `PipelineRun` и
+вызывает `RunPipelineUseCase`. Если все хорошо, пользователь попадает на
+`/runs/<id>/`, где видны datasets, models и metrics. Если что-то падает, run
+получает статус `failed`, а ошибка записывается в `error_message`.
 
 ## Почему нельзя хранить большие datasets в SQLite
 
@@ -445,6 +473,7 @@ raw data
 - Metadata models в Django.
 - Admin для metadata.
 - Dashboard `/`.
+- CSV upload `/upload/`.
 - Runs list `/runs/`.
 - Run detail `/runs/<id>/`.
 - Создание `PipelineRun` через UI.
@@ -462,11 +491,10 @@ raw data
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.
+- Синхронный запуск pipeline из raw CSV через `/upload/`.
 
 ## Будет позже
 
 - Binance loader.
-- Full pipeline button в UI.
-- Полный pipeline через UI.
-- Автоматическая запись реальных metrics в UI.
-- Автоматическое создание model artifacts через UI.
+- Async/background queue для долгих запусков.
+- Подключение главной Dashboard-формы к реальному pipeline.
