@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from django.conf import settings
 from django.shortcuts import redirect, render
@@ -12,7 +14,7 @@ from mlcore.services import (
     RunPersistenceService,
     RunPipelineUseCase,
 )
-from runs.models import PipelineRun
+from runs.models import DatasetArtifact, PipelineRun
 
 from .forms import CsvUploadForm, PipelineRunForm
 
@@ -57,6 +59,11 @@ def upload_csv(request):
             run = _create_upload_run(form.cleaned_data)
             try:
                 raw_df = pd.read_csv(form.cleaned_data["csv_file"])
+                _save_uploaded_raw_dataset(
+                    run,
+                    raw_df,
+                    symbol=form.cleaned_data["symbol"],
+                )
                 _build_upload_use_case().execute(
                     run,
                     raw_df,
@@ -93,6 +100,24 @@ def _create_upload_run(cleaned_data):
     )
 
 
+def _save_uploaded_raw_dataset(run, raw_df, symbol):
+    artifact_repository = ArtifactRepository(settings.MEDIA_ROOT)
+    raw_path = artifact_repository.dataset_path(
+        DatasetArtifact.ArtifactType.RAW,
+        run.id,
+        symbol=symbol,
+        extension="csv",
+    )
+    DatasetRepository().save(raw_df, raw_path)
+    DatasetArtifact.objects.create(
+        run=run,
+        artifact_type=DatasetArtifact.ArtifactType.RAW,
+        symbol=symbol,
+        file_path=_metadata_path(raw_path),
+        row_count=len(raw_df),
+    )
+
+
 def _build_upload_use_case():
     artifact_repository = ArtifactRepository(settings.MEDIA_ROOT)
     dataset_repository = DatasetRepository()
@@ -119,6 +144,17 @@ def _build_upload_use_case():
         full_pipeline_service=full_pipeline_service,
         persistence_service=RunPersistenceService(),
     )
+
+
+def _metadata_path(path):
+    path = Path(path)
+    if not path.is_absolute():
+        return path.as_posix()
+
+    try:
+        return path.resolve().relative_to(Path(settings.MEDIA_ROOT).resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def _mark_upload_run_failed(run, exc):

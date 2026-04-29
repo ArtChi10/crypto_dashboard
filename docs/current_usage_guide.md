@@ -38,7 +38,8 @@ media/ = большие файлы datasets, models, reports
 - Детальная страница запуска `/runs/<id>/`.
 - Минимальный общий UI layout и CSS для Dashboard, Upload и Runs pages.
 - Форма создания `PipelineRun` на главной странице.
-- Страница `/upload/` для ручной загрузки raw OHLCV CSV и синхронного запуска pipeline.
+- Страница `/upload/` для ручной загрузки raw OHLCV CSV, сохранения raw artifact
+  и синхронного запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
 - `DataCleaner` для очистки OHLCV-данных.
@@ -174,8 +175,8 @@ http://127.0.0.1:8000/
 После отправки формы Django создаст запись `PipelineRun` со статусом `Created`
 и перенаправит на страницу `/runs/<id>/`.
 
-Важно: сейчас UI не скачивает данные, не строит features, не обучает модель и
-не записывает metrics. Он создает metadata-запись запуска.
+Важно: эта Dashboard-форма не скачивает данные, не строит features, не обучает
+модель и не записывает metrics. Она создает metadata-запись запуска.
 
 ## Как загрузить raw CSV и запустить pipeline
 
@@ -203,13 +204,18 @@ timestamp, open, high, low, close, volume, symbol
 
 4. Нажмите `Загрузить CSV и запустить pipeline`.
 
+Перед запуском pipeline страница сохраняет исходный CSV в `media/datasets/raw/`
+через `DatasetRepository` и создает `DatasetArtifact` с `artifact_type="raw"`,
+`symbol` и `row_count`.
+
 Для MVP запуск выполняется синхронно прямо во время POST-запроса. После успеха
-страница перенаправляет на `/runs/<id>/`, где видны созданные
+страница перенаправляет на `/runs/<id>/`, где видны raw/processed/final
 `DatasetArtifact`, `ModelArtifact` и `MetricSnapshot`.
 
 Если CSV некорректный или pipeline падает, страница тоже перенаправляет на
 `/runs/<id>/`, а `PipelineRun.status` становится `Failed` и ошибка записывается
-в `PipelineRun.error_message`.
+в `PipelineRun.error_message`. Если ошибка произошла после сохранения raw CSV,
+raw artifact остается у запуска для воспроизводимости.
 
 ## Как открыть /runs/ и /runs/<id>/
 
@@ -429,7 +435,7 @@ media/
 
 Назначение папок:
 
-- `media/datasets/raw/` - сырые OHLCV-данные;
+- `media/datasets/raw/` - сырые OHLCV-данные, включая uploaded CSV из `/upload/`;
 - `media/datasets/processed/` - очищенные или промежуточные datasets;
 - `media/datasets/final/` - финальные datasets с features и target;
 - `media/models/` - trained model artifacts;

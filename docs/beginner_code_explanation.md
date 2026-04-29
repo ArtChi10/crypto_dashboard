@@ -61,8 +61,8 @@ Django здесь не обучает модель сам. Он дает удо�
 pipeline. Оно только создает metadata-запись со статусом `Created`.
 
 Для ручного запуска pipeline через UI есть отдельная страница `/upload/`: она
-принимает raw OHLCV CSV, создает `PipelineRun`, запускает pipeline и показывает
-результат на странице запуска.
+принимает raw OHLCV CSV, создает `PipelineRun`, сохраняет исходный CSV как raw
+`DatasetArtifact`, запускает pipeline и показывает результат на странице запуска.
 
 ## Что такое ArtifactRepository
 
@@ -72,7 +72,7 @@ pipeline. Оно только создает metadata-запись со стат
 понятный путь вроде:
 
 ```text
-media/datasets/raw/raw_run_12_BTCUSDT_20260427_120501.parquet
+media/datasets/raw/raw_run_12_BTCUSDT_20260427_120501.csv
 ```
 
 Он следит, чтобы:
@@ -408,10 +408,14 @@ metrics.
 - train_baseline;
 - train_catboost.
 
-После отправки формы Django читает CSV через pandas, создает `PipelineRun` и
-вызывает `RunPipelineUseCase`. Если все хорошо, пользователь попадает на
-`/runs/<id>/`, где видны datasets, models и metrics. Если что-то падает, run
-получает статус `failed`, а ошибка записывается в `error_message`.
+После отправки формы Django читает CSV через pandas, создает `PipelineRun`,
+сохраняет исходный CSV в `media/datasets/raw/` и создает raw `DatasetArtifact`
+с `symbol` и `row_count`. Затем страница вызывает `RunPipelineUseCase`.
+
+Если все хорошо, пользователь попадает на `/runs/<id>/`, где видны raw,
+processed и final datasets, models и metrics. Если pipeline падает уже после
+raw save, raw artifact остается у запуска, run получает статус `failed`, а
+ошибка записывается в `error_message`.
 
 ## Почему нельзя хранить большие datasets в SQLite
 

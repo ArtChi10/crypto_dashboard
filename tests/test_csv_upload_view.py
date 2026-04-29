@@ -1,10 +1,12 @@
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
@@ -19,6 +21,7 @@ class CsvUploadViewTests(unittest.TestCase):
         self.run_ids = []
 
     def tearDown(self):
+        self._delete_raw_artifact_files()
         PipelineRun.objects.filter(id__in=self.run_ids).delete()
 
     def test_upload_get_returns_form(self):
@@ -57,12 +60,22 @@ class CsvUploadViewTests(unittest.TestCase):
         self.assertEqual(list(use_case.seen_raw_df.columns), EXPECTED_COLUMNS)
         self.assertTrue(use_case.train_baseline)
         self.assertTrue(use_case.train_catboost)
-        self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 3)
+        raw_artifact = DatasetArtifact.objects.get(
+            run=run,
+            artifact_type=DatasetArtifact.ArtifactType.RAW,
+        )
+        self.assertEqual(raw_artifact.symbol, "BTCUSDT")
+        self.assertEqual(raw_artifact.row_count, 2)
+        self.assertIn("datasets/raw/raw_run_", raw_artifact.file_path)
+        self.assertTrue(raw_artifact.file_path.endswith(".csv"))
+        self.assertTrue((Path(settings.MEDIA_ROOT) / raw_artifact.file_path).exists())
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
 
         detail_response = self.client.get(response.url)
         detail_content = detail_response.content.decode()
+        self.assertIn("raw", detail_content)
         self.assertIn("processed.parquet", detail_content)
         self.assertIn("baseline.joblib", detail_content)
         self.assertIn("MetricSnapshot", detail_content)
@@ -85,6 +98,14 @@ class CsvUploadViewTests(unittest.TestCase):
         self.assertIsNotNone(run.started_at)
         self.assertIsNotNone(run.finished_at)
         self.assertEqual(run.error_message, "bad csv")
+        self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 1)
+        raw_artifact = DatasetArtifact.objects.get(
+            run=run,
+            artifact_type=DatasetArtifact.ArtifactType.RAW,
+        )
+        self.assertEqual(raw_artifact.symbol, "BTCUSDT")
+        self.assertEqual(raw_artifact.row_count, 2)
+        self.assertTrue((Path(settings.MEDIA_ROOT) / raw_artifact.file_path).exists())
 
     def test_invalid_form_does_not_create_run_or_500(self):
         before_count = PipelineRun.objects.count()
@@ -119,6 +140,18 @@ class CsvUploadViewTests(unittest.TestCase):
             "train_baseline": "on",
             "train_catboost": "on",
         }
+
+    def _delete_raw_artifact_files(self):
+        raw_artifacts = DatasetArtifact.objects.filter(
+            run_id__in=self.run_ids,
+            artifact_type=DatasetArtifact.ArtifactType.RAW,
+        )
+        for file_path in raw_artifacts.values_list("file_path", flat=True):
+            path = Path(file_path)
+            if not path.is_absolute():
+                path = Path(settings.MEDIA_ROOT) / path
+            if path.exists():
+                path.unlink()
 
 
 class RecordingUseCase:
