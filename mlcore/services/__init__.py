@@ -10,6 +10,7 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationResult,
     DatasetPreparationService,
 )
+from mlcore.services.full_pipeline_service import FullPipelineResult, FullPipelineService
 
 __all__ = [
     "BaselineTrainingResult",
@@ -18,4 +19,6 @@ __all__ = [
     "CatBoostTrainingService",
     "DatasetPreparationResult",
     "DatasetPreparationService",
+    "FullPipelineResult",
+    "FullPipelineService",
 ]

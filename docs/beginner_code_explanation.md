@@ -311,6 +311,26 @@ baseline-модели обучает `CatBoostClassifier`.
 
 Но сейчас он не подключен к Dashboard. UI не вызывает его автоматически.
 
+## Что делает FullPipelineService
+
+`FullPipelineService` - это верхний ручной service для in-memory запуска
+текущего ML-пайплайна.
+
+Он получает raw OHLCV `DataFrame` и делает так:
+
+1. Запускает `DatasetPreparationService`.
+2. Загружает final parquet dataset через `DatasetRepository`.
+3. Если включен `train_baseline`, запускает `BaselineTrainingService`.
+4. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
+5. Возвращает общий результат: preparation result, baseline result и CatBoost
+   result.
+
+Если обе training-галочки выключены, service сразу выдаст `ValueError`.
+
+Важно: это еще не Django runner. Он не пишет `PipelineRun`, `DatasetArtifact`,
+`MetricSnapshot` или `ModelArtifact` в SQLite. Он только связывает уже готовые
+ML-компоненты в один Python-сценарий.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -385,6 +405,7 @@ raw data
 - CatBoost trainer.
 - Ручной `BaselineTrainingService`.
 - Ручной `CatBoostTrainingService`.
+- Ручной `FullPipelineService`.
 
 ## Будет позже
 

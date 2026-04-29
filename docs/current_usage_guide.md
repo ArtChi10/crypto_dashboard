@@ -49,6 +49,7 @@ media/ = большие файлы datasets, models, reports
 - `ModelRepository` для сохранения и загрузки `.joblib`, `.pkl`, `.cbm`.
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
+- `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 
 ## Что еще не работает
 
@@ -236,7 +237,7 @@ runner и сам не обучает модели.
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
 targets, split, trainers, evaluator, `DatasetPreparationService`,
-`BaselineTrainingService` и `CatBoostTrainingService`.
+`BaselineTrainingService`, `CatBoostTrainingService` и `FullPipelineService`.
 
 ## Как запустить Ruff
 
@@ -295,6 +296,26 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
   `confusion_matrix`;
 - `features` показывает numeric feature columns, которые использовала модель;
 - `rows` показывает размеры train, valid и test частей.
+
+## Как вручную проверить FullPipelineService
+
+`FullPipelineService` запускает весь текущий ML-сценарий на переданном raw
+`DataFrame`: подготовку датасета, загрузку final parquet и обучение выбранных
+моделей. Он не пишет metadata в SQLite и не создает Django artifacts.
+
+Для synthetic данных важно, чтобы после `TargetBuilder` получались оба класса
+`target`, иначе trainers честно откажутся обучаться на одном классе.
+
+```powershell
+.crypto\Scripts\python.exe -c "from pathlib import Path; import pandas as pd; from mlcore.repositories import ArtifactRepository; from mlcore.services import CatBoostTrainingService, FullPipelineService; from mlcore.training import CatBoostTrainer; close = [1, 3, 2, 4] * 25; df = pd.DataFrame({'timestamp': pd.date_range('2024-01-01', periods=100, freq='h'), 'open': close, 'high': [x + 1 for x in close], 'low': [x - 1 for x in close], 'close': close, 'volume': range(100, 200), 'symbol': ['BTCUSDT'] * 100}); artifact_repo = ArtifactRepository(Path('tmp_artifacts/manual_full_pipeline_check')); service = FullPipelineService(catboost_training_service=CatBoostTrainingService(artifact_repository=artifact_repo, trainer=CatBoostTrainer(iterations=5, verbose=False))); result = service.run(df, run_id=1, horizon=3, symbol='BTCUSDT'); print('final_path=', result.preparation_result.final_path); print('baseline=', result.baseline_result is not None); print('catboost=', result.catboost_result is not None); print('baseline_metrics=', result.baseline_result.metrics); print('catboost_metrics=', result.catboost_result.metrics)"
+```
+
+Ожидаемый смысл результата:
+
+- `final_path` показывает путь к сохраненному final parquet dataset;
+- `baseline=True` означает, что baseline-модель обучилась и сохранилась;
+- `catboost=True` означает, что CatBoost-модель обучилась и сохранилась;
+- `baseline_metrics` и `catboost_metrics` содержат classification metrics.
 
 ## Как вручную проверить CatBoostTrainingService
 
@@ -423,4 +444,6 @@ http://127.0.0.1:8000/admin/
 - `BaselineTrainingService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
 - `CatBoostTrainingService` можно запускать вручную из Python, но UI пока не
+  вызывает его автоматически.
+- `FullPipelineService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
