@@ -236,14 +236,11 @@ Baseline нужен как первая точка сравнения. Если 
 Он уже реализован как trainer: его можно вызвать из Python-кода и передать ему
 train/valid данные.
 
-Но важно разделять:
+Важно: `CatBoostTrainer` - это низкоуровневый trainer. Он умеет обучить модель,
+но сам не делает split, не считает metrics и не сохраняет artifact.
 
-- `CatBoostTrainer` уже есть;
-- `CatBoostTrainingService` еще не реализован;
-- UI пока не запускает CatBoost training.
-
-То есть двигатель для CatBoost уже есть, но полноценная кнопка и service вокруг
-него еще будут позже.
+Для полного ручного сценария из Python теперь есть `CatBoostTrainingService`.
+UI пока не запускает CatBoost training автоматически.
 
 ## Что такое ModelRepository
 
@@ -270,6 +267,26 @@ CatBoost `.cbm` сохраняется через native метод CatBoost `sa
 6. Строит путь к model artifact через `ArtifactRepository`.
 7. Сохраняет модель через `ModelRepository`.
 8. Возвращает результат: путь к модели, metrics, features и размеры split.
+
+Это уже рабочий service для Python-кода.
+
+Но сейчас он не подключен к Dashboard. UI не вызывает его автоматически.
+
+## Что делает CatBoostTrainingService
+
+`CatBoostTrainingService` похож на `BaselineTrainingService`, но вместо
+baseline-модели обучает `CatBoostClassifier`.
+
+Он делает тот же application-level сценарий:
+
+1. Проверяет, что в dataset есть колонка `target`.
+2. Находит numeric feature columns.
+3. Делит данные через `SplitService`.
+4. Обучает CatBoost через `CatBoostTrainer` на train и valid split.
+5. Считает metrics через `Evaluator`.
+6. Строит путь к `.cbm` model artifact через `ArtifactRepository`.
+7. Сохраняет модель через `ModelRepository`.
+8. Возвращает путь к модели, metrics, features и размеры split.
 
 Это уже рабочий service для Python-кода.
 
@@ -345,12 +362,12 @@ raw data
 - Baseline trainer.
 - CatBoost trainer.
 - Ручной `BaselineTrainingService`.
+- Ручной `CatBoostTrainingService`.
 
 ## Будет позже
 
 - Binance loader.
 - Full pipeline button в UI.
 - Полный pipeline через UI.
-- `CatBoostTrainingService`.
 - Автоматическая запись реальных metrics в UI.
 - Автоматическое создание model artifacts через UI.

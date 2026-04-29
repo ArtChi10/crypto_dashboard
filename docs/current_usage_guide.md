@@ -47,12 +47,12 @@ media/ = большие файлы datasets, models, reports
 - `CatBoostTrainer`.
 - `ModelRepository` для сохранения и загрузки `.joblib`, `.pkl`, `.cbm`.
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
+- `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 
 ## Что еще не работает
 
 - Нет загрузчика данных из Binance.
 - Нет кнопки UI, которая запускает полный pipeline.
-- Нет `CatBoostTrainingService`.
 - Нет полного pipeline через UI.
 - Форма на главной странице создает только metadata-запись `PipelineRun`.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
@@ -234,7 +234,8 @@ runner и сам не обучает модели.
 ```
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
-targets, split, trainers, evaluator и `BaselineTrainingService`.
+targets, split, trainers, evaluator, `BaselineTrainingService` и
+`CatBoostTrainingService`.
 
 ## Как запустить Ruff
 
@@ -270,6 +271,24 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
 Ожидаемый смысл результата:
 
 - `model_path` показывает путь к сохраненному `.joblib` файлу;
+- `metrics` содержит `accuracy`, `precision`, `recall`, `f1`, `roc_auc`,
+  `confusion_matrix`;
+- `features` показывает numeric feature columns, которые использовала модель;
+- `rows` показывает размеры train, valid и test частей.
+
+## Как вручную проверить CatBoostTrainingService
+
+`CatBoostTrainingService` запускается похожим образом, но сохраняет модель в
+CatBoost native `.cbm` формате. Для ручной проверки удобно передать
+`CatBoostTrainer(iterations=5, verbose=False)`, чтобы обучение было быстрым.
+
+```powershell
+.crypto\Scripts\python.exe -c "from pathlib import Path; import pandas as pd; from mlcore.repositories import ArtifactRepository; from mlcore.services import CatBoostTrainingService; from mlcore.training import CatBoostTrainer; df = pd.DataFrame({'timestamp': pd.date_range('2024-01-01', periods=80, freq='h'), 'symbol': ['BTCUSDT'] * 80, 'feature_1': range(80), 'feature_2': [i % 5 for i in range(80)], 'target': [i % 2 for i in range(80)]}); service = CatBoostTrainingService(artifact_repository=ArtifactRepository(Path('tmp_artifacts/manual_catboost_check')), trainer=CatBoostTrainer(iterations=5, verbose=False)); result = service.train_and_evaluate(df, run_id=1); print('model_path=', result.model_path); print('metrics=', result.metrics); print('features=', result.feature_columns); print('rows=', result.train_rows, result.valid_rows, result.test_rows)"
+```
+
+Ожидаемый смысл результата:
+
+- `model_path` показывает путь к сохраненному `.cbm` файлу;
 - `metrics` содержит `accuracy`, `precision`, `recall`, `f1`, `roc_auc`,
   `confusion_matrix`;
 - `features` показывает numeric feature columns, которые использовала модель;
@@ -375,11 +394,11 @@ http://127.0.0.1:8000/admin/
 
 - Binance download еще нет.
 - Full pipeline button еще нет.
-- `CatBoostTrainingService` еще нет.
 - Full pipeline через UI еще не реализован.
 - Реальные metrics в UI пока не пишутся автоматически.
 - Model artifacts через UI пока не создаются.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- `CatBoostTrainer` уже есть, но он не подключен к UI как полноценный service.
 - `BaselineTrainingService` можно запускать вручную из Python, но UI пока не
+  вызывает его автоматически.
+- `CatBoostTrainingService` можно запускать вручную из Python, но UI пока не
   вызывает его автоматически.
