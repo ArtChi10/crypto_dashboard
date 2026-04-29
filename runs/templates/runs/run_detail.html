@@ -1,90 +1,96 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ run.name }} | Crypto Dashboard</title>
-</head>
-<body>
-    <main>
+{% extends "base.html" %}
+
+{% block title %}{{ run.name }} | Crypto Dashboard{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <p class="page-header__eyebrow">Run detail</p>
         <h1>Запуск #{{ run.id }}: {{ run.name }}</h1>
-        <p><a href="{% url 'runs:list' %}">← К истории запусков</a></p>
+        <p>
+            <span class="status status-{{ run.status }}">{{ run.get_status_display }}</span>
+        </p>
+        <div class="toolbar">
+            <a class="button button--secondary" href="{% url 'runs:list' %}">К истории запусков</a>
+            <a class="button" href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a>
+        </div>
+    </div>
 
-        <section aria-label="Pipeline run parameters">
-            <h2>Параметры запуска</h2>
-            <dl>
-                <dt>ID</dt>
-                <dd>{{ run.id }}</dd>
+    <section class="section" aria-label="Pipeline run parameters">
+        <h2>Параметры запуска</h2>
+        <dl class="definition-grid">
+            <dt>ID</dt>
+            <dd>{{ run.id }}</dd>
 
-                <dt>name</dt>
-                <dd>{{ run.name }}</dd>
+            <dt>name</dt>
+            <dd>{{ run.name }}</dd>
 
-                <dt>status</dt>
-                <dd>{{ run.get_status_display }}</dd>
+            <dt>status</dt>
+            <dd><span class="status status-{{ run.status }}">{{ run.get_status_display }}</span></dd>
 
-                <dt>symbols_json</dt>
-                <dd>
-                    {% if run.symbols_json %}
-                        {{ run.symbols_json|join:", " }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
+            <dt>symbols_json</dt>
+            <dd>
+                {% if run.symbols_json %}
+                    {{ run.symbols_json|join:", " }}
+                {% else %}
+                    -
+                {% endif %}
+            </dd>
 
-                <dt>interval</dt>
-                <dd>{{ run.interval|default:"-" }}</dd>
+            <dt>interval</dt>
+            <dd>{{ run.interval|default:"-" }}</dd>
 
-                <dt>start_date</dt>
-                <dd>
-                    {% if run.start_date %}
-                        {{ run.start_date|date:"Y-m-d" }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
+            <dt>start_date</dt>
+            <dd>
+                {% if run.start_date %}
+                    {{ run.start_date|date:"Y-m-d" }}
+                {% else %}
+                    -
+                {% endif %}
+            </dd>
 
-                <dt>end_date</dt>
-                <dd>
-                    {% if run.end_date %}
-                        {{ run.end_date|date:"Y-m-d" }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
+            <dt>end_date</dt>
+            <dd>
+                {% if run.end_date %}
+                    {{ run.end_date|date:"Y-m-d" }}
+                {% else %}
+                    -
+                {% endif %}
+            </dd>
 
-                <dt>target_horizon</dt>
-                <dd>{{ run.target_horizon|default_if_none:"-" }}</dd>
+            <dt>target_horizon</dt>
+            <dd>{{ run.target_horizon|default_if_none:"-" }}</dd>
 
-                <dt>started_at</dt>
-                <dd>
-                    {% if run.started_at %}
-                        {{ run.started_at|date:"Y-m-d H:i" }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
+            <dt>started_at</dt>
+            <dd>
+                {% if run.started_at %}
+                    {{ run.started_at|date:"Y-m-d H:i" }}
+                {% else %}
+                    -
+                {% endif %}
+            </dd>
 
-                <dt>finished_at</dt>
-                <dd>
-                    {% if run.finished_at %}
-                        {{ run.finished_at|date:"Y-m-d H:i" }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
-            </dl>
+            <dt>finished_at</dt>
+            <dd>
+                {% if run.finished_at %}
+                    {{ run.finished_at|date:"Y-m-d H:i" }}
+                {% else %}
+                    -
+                {% endif %}
+            </dd>
+        </dl>
 
-            {% if run.error_message %}
-                <section aria-label="Pipeline run error">
-                    <h3>Ошибка</h3>
-                    <pre>{{ run.error_message }}</pre>
-                </section>
-            {% endif %}
-        </section>
+        {% if run.error_message %}
+            <section class="section error-box" aria-label="Pipeline run error">
+                <h3>Ошибка</h3>
+                <pre>{{ run.error_message }}</pre>
+            </section>
+        {% endif %}
+    </section>
 
-        <section aria-label="Dataset artifacts">
-            <h2>DatasetArtifact</h2>
-            {% if dataset_artifacts %}
+    <section class="section" aria-label="Dataset artifacts">
+        <h2>DatasetArtifact</h2>
+        {% if dataset_artifacts %}
+            <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -107,14 +113,16 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
-                <p>Dataset artifacts для этого запуска пока нет.</p>
-            {% endif %}
-        </section>
+            </div>
+        {% else %}
+            <p class="empty-state">Dataset artifacts для этого запуска пока нет.</p>
+        {% endif %}
+    </section>
 
-        <section aria-label="Model artifacts">
-            <h2>ModelArtifact</h2>
-            {% if model_artifacts %}
+    <section class="section" aria-label="Model artifacts">
+        <h2>ModelArtifact</h2>
+        {% if model_artifacts %}
+            <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -135,14 +143,16 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
-                <p>Model artifacts для этого запуска пока нет.</p>
-            {% endif %}
-        </section>
+            </div>
+        {% else %}
+            <p class="empty-state">Model artifacts для этого запуска пока нет.</p>
+        {% endif %}
+    </section>
 
-        <section aria-label="Metric snapshots">
-            <h2>MetricSnapshot</h2>
-            {% if metric_snapshots %}
+    <section class="section" aria-label="Metric snapshots">
+        <h2>MetricSnapshot</h2>
+        {% if metric_snapshots %}
+            <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -171,14 +181,16 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
-                <p>Metric snapshots для этого запуска пока нет.</p>
-            {% endif %}
-        </section>
+            </div>
+        {% else %}
+            <p class="empty-state">Metric snapshots для этого запуска пока нет.</p>
+        {% endif %}
+    </section>
 
-        <section aria-label="Report artifacts">
-            <h2>ReportArtifact</h2>
-            {% if report_artifacts %}
+    <section class="section" aria-label="Report artifacts">
+        <h2>ReportArtifact</h2>
+        {% if report_artifacts %}
+            <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -197,10 +209,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
-                <p>Report artifacts для этого запуска пока нет.</p>
-            {% endif %}
-        </section>
-    </main>
-</body>
-</html>
+            </div>
+        {% else %}
+            <p class="empty-state">Report artifacts для этого запуска пока нет.</p>
+        {% endif %}
+    </section>
+{% endblock %}

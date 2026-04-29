@@ -36,6 +36,7 @@ media/ = большие файлы datasets, models, reports
 - Главная страница `/`.
 - История запусков `/runs/`.
 - Детальная страница запуска `/runs/<id>/`.
+- Минимальный общий UI layout и CSS для Dashboard, Upload и Runs pages.
 - Форма создания `PipelineRun` на главной странице.
 - Страница `/upload/` для ручной загрузки raw OHLCV CSV и синхронного запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.

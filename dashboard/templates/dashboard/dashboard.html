@@ -1,83 +1,94 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crypto Dashboard</title>
-</head>
-<body>
-    <main>
+{% extends "base.html" %}
+
+{% block title %}Crypto Dashboard{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <p class="page-header__eyebrow">Dashboard</p>
         <h1>Crypto Dashboard</h1>
-        <p>ML-пайплайн прогнозирования направления цены криптовалют.</p>
+        <p class="lede">ML-пайплайн прогнозирования направления цены криптовалют.</p>
+        <div class="toolbar">
+            <a class="button" href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a>
+            <a class="button button--secondary" href="{% url 'runs:list' %}">История запусков</a>
+        </div>
+    </div>
 
-        <section aria-label="Pipeline status">
-            <h2>Статус</h2>
-            <p>Всего запусков: {{ total_runs }}</p>
-            <p><a href="/runs/">История запусков</a></p>
-            <p><a href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a></p>
-        </section>
+    <section class="section" aria-label="Pipeline status">
+        <h2>Статус</h2>
+        <div class="stats-row">
+            <div class="stat">
+                <span class="stat__label">Всего запусков</span>
+                <span class="stat__value">{{ total_runs }}</span>
+            </div>
+        </div>
+    </section>
 
-        <section aria-label="Create pipeline run">
-            <h2>Новый запуск pipeline</h2>
+    <section class="section" aria-label="Create pipeline run">
+        <h2>Новый запуск pipeline</h2>
 
-            <form method="post">
-                {% csrf_token %}
+        <form class="form-panel" method="post">
+            {% csrf_token %}
 
-                {{ form.non_field_errors }}
+            {{ form.non_field_errors }}
 
-                <p>
-                    {{ form.symbols.label_tag }}<br>
+            <div class="form-grid">
+                <p class="form-row form-row--wide">
+                    {{ form.symbols.label_tag }}
                     {{ form.symbols }}
                     {{ form.symbols.errors }}
                     {% if form.symbols.help_text %}
-                        <br><small>{{ form.symbols.help_text }}</small>
+                        <small class="muted">{{ form.symbols.help_text }}</small>
                     {% endif %}
                 </p>
 
-                <p>
-                    {{ form.interval.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.interval.label_tag }}
                     {{ form.interval }}
                     {{ form.interval.errors }}
                 </p>
 
-                <p>
-                    {{ form.start_date.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.start_date.label_tag }}
                     {{ form.start_date }}
                     {{ form.start_date.errors }}
                 </p>
 
-                <p>
-                    {{ form.end_date.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.end_date.label_tag }}
                     {{ form.end_date }}
                     {{ form.end_date.errors }}
                 </p>
 
-                <p>
-                    {{ form.target_horizon.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.target_horizon.label_tag }}
                     {{ form.target_horizon }}
                     {{ form.target_horizon.errors }}
                 </p>
 
-                <p>
+                <p class="form-row">
                     {{ form.train_baseline }}
                     {{ form.train_baseline.label_tag }}
                     {{ form.train_baseline.errors }}
                 </p>
 
-                <p>
+                <p class="form-row">
                     {{ form.train_main_model }}
                     {{ form.train_main_model.label_tag }}
                     {{ form.train_main_model.errors }}
                 </p>
+            </div>
 
+            <div class="toolbar">
                 <button type="submit">Создать запуск</button>
-            </form>
-        </section>
+            </div>
+        </form>
+    </section>
 
-        <section aria-label="Latest pipeline runs">
-            <h2>Последние запуски</h2>
+    <section class="section" aria-label="Latest pipeline runs">
+        <h2>Последние запуски</h2>
 
-            {% if latest_runs %}
+        {% if latest_runs %}
+            <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -95,7 +106,11 @@
                             <tr>
                                 <td>{{ run.id }}</td>
                                 <td><a href="{% url 'runs:detail' run.id %}">{{ run.name }}</a></td>
-                                <td>{{ run.get_status_display }}</td>
+                                <td>
+                                    <span class="status status-{{ run.status }}">
+                                        {{ run.get_status_display }}
+                                    </span>
+                                </td>
                                 <td>{{ run.created_at|date:"Y-m-d H:i" }}</td>
                                 <td>
                                     {% if run.started_at %}
@@ -110,10 +125,12 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
-                <p>Запусков pipeline пока нет. Когда появятся записи в metadata DB, последние запуски будут показаны здесь.</p>
-            {% endif %}
-        </section>
-    </main>
-</body>
-</html>
+            </div>
+        {% else %}
+            <p class="empty-state">
+                Запусков pipeline пока нет. Когда появятся записи в metadata DB, последние
+                запуски будут показаны здесь.
+            </p>
+        {% endif %}
+    </section>
+{% endblock %}

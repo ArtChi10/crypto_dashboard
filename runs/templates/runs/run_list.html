@@ -1,16 +1,20 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>История запусков | Crypto Dashboard</title>
-</head>
-<body>
-    <main>
-        <h1>История запусков</h1>
-        <p><a href="/">← На главную</a></p>
+{% extends "base.html" %}
 
-        {% if page_obj.object_list %}
+{% block title %}История запусков | Crypto Dashboard{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <p class="page-header__eyebrow">Runs</p>
+        <h1>История запусков</h1>
+        <p class="lede">Все записи PipelineRun из metadata database.</p>
+        <div class="toolbar">
+            <a class="button button--secondary" href="{% url 'dashboard:home' %}">На Dashboard</a>
+            <a class="button" href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a>
+        </div>
+    </div>
+
+    {% if page_obj.object_list %}
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -30,7 +34,11 @@
                         <tr>
                             <td>{{ run.id }}</td>
                             <td><a href="{% url 'runs:detail' run.id %}">{{ run.name }}</a></td>
-                            <td>{{ run.get_status_display }}</td>
+                            <td>
+                                <span class="status status-{{ run.status }}">
+                                    {{ run.get_status_display }}
+                                </span>
+                            </td>
                             <td>
                                 {% if run.symbols_json %}
                                     {{ run.symbols_json|join:", " }}
@@ -59,25 +67,27 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
 
-            {% if page_obj.paginator.num_pages > 1 %}
-                <nav aria-label="Пагинация запусков">
-                    {% if page_obj.has_previous %}
-                        <a href="?page=1">Первая</a>
-                        <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
-                    {% endif %}
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Пагинация запусков">
+                {% if page_obj.has_previous %}
+                    <a class="button button--secondary" href="?page=1">Первая</a>
+                    <a class="button button--secondary" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                {% endif %}
 
-                    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                <span class="muted">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
 
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
-                        <a href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
-                    {% endif %}
-                </nav>
-            {% endif %}
-        {% else %}
-            <p>Запусков pipeline пока нет. Когда metadata DB получит записи PipelineRun, они появятся здесь.</p>
+                {% if page_obj.has_next %}
+                    <a class="button button--secondary" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+                    <a class="button button--secondary" href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
+                {% endif %}
+            </nav>
         {% endif %}
-    </main>
-</body>
-</html>
+    {% else %}
+        <p class="empty-state">
+            Запусков pipeline пока нет. Когда metadata DB получит записи PipelineRun, они
+            появятся здесь.
+        </p>
+    {% endif %}
+{% endblock %}

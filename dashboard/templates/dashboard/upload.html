@@ -1,75 +1,79 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Загрузка raw CSV | Crypto Dashboard</title>
-</head>
-<body>
-    <main>
+{% extends "base.html" %}
+
+{% block title %}Загрузка raw CSV | Crypto Dashboard{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <p class="page-header__eyebrow">Upload CSV</p>
         <h1>Загрузка raw OHLCV CSV</h1>
-        <p><a href="{% url 'dashboard:home' %}">← На Dashboard</a></p>
+        <p class="lede">Синхронный запуск pipeline на загруженном CSV-файле.</p>
+        <div class="toolbar">
+            <a class="button button--secondary" href="{% url 'dashboard:home' %}">На Dashboard</a>
+        </div>
+    </div>
 
-        <section aria-label="CSV upload">
-            <h2>Новый запуск из CSV</h2>
-            <p>Ожидаемые колонки: timestamp, open, high, low, close, volume, symbol.</p>
+    <section class="section" aria-label="CSV upload">
+        <h2>Новый запуск из CSV</h2>
+        <p class="muted">Ожидаемые колонки: timestamp, open, high, low, close, volume, symbol.</p>
 
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
+        <form class="form-panel" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
 
-                {{ form.non_field_errors }}
+            {{ form.non_field_errors }}
 
-                <p>
-                    {{ form.csv_file.label_tag }}<br>
+            <div class="form-grid">
+                <p class="form-row form-row--wide">
+                    {{ form.csv_file.label_tag }}
                     {{ form.csv_file }}
                     {{ form.csv_file.errors }}
                 </p>
 
-                <p>
-                    {{ form.symbol.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.symbol.label_tag }}
                     {{ form.symbol }}
                     {{ form.symbol.errors }}
                 </p>
 
-                <p>
-                    {{ form.interval.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.interval.label_tag }}
                     {{ form.interval }}
                     {{ form.interval.errors }}
                 </p>
 
-                <p>
-                    {{ form.start_date.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.start_date.label_tag }}
                     {{ form.start_date }}
                     {{ form.start_date.errors }}
                 </p>
 
-                <p>
-                    {{ form.end_date.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.end_date.label_tag }}
                     {{ form.end_date }}
                     {{ form.end_date.errors }}
                 </p>
 
-                <p>
-                    {{ form.target_horizon.label_tag }}<br>
+                <p class="form-row">
+                    {{ form.target_horizon.label_tag }}
                     {{ form.target_horizon }}
                     {{ form.target_horizon.errors }}
                 </p>
 
-                <p>
+                <p class="form-row">
                     {{ form.train_baseline }}
                     {{ form.train_baseline.label_tag }}
                     {{ form.train_baseline.errors }}
                 </p>
 
-                <p>
+                <p class="form-row">
                     {{ form.train_catboost }}
                     {{ form.train_catboost.label_tag }}
                     {{ form.train_catboost.errors }}
                 </p>
+            </div>
 
+            <div class="toolbar">
                 <button type="submit">Загрузить CSV и запустить pipeline</button>
-            </form>
-        </section>
-    </main>
-</body>
-</html>
+            </div>
+        </form>
+    </section>
+{% endblock %}
