@@ -96,19 +96,25 @@
                         <tr>
                             <th scope="col">type</th>
                             <th scope="col">symbol</th>
-                            <th scope="col">file_path</th>
                             <th scope="col">row_count</th>
+                            <th scope="col">file_path</th>
                             <th scope="col">created_at</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for artifact in dataset_artifacts %}
                             <tr>
-                                <td>{{ artifact.get_artifact_type_display }}</td>
-                                <td>{{ artifact.symbol|default:"-" }}</td>
-                                <td>{{ artifact.file_path }}</td>
-                                <td>{{ artifact.row_count|default_if_none:"-" }}</td>
-                                <td>{{ artifact.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ artifact.artifact.get_artifact_type_display }}</td>
+                                <td>{{ artifact.artifact.symbol|default:"-" }}</td>
+                                <td>{{ artifact.artifact.row_count|default_if_none:"-" }}</td>
+                                <td class="path-cell">
+                                    {% if artifact.file_url %}
+                                        <a class="file-link" href="{{ artifact.file_url }}">{{ artifact.artifact.file_path }}</a>
+                                    {% else %}
+                                        <code>{{ artifact.artifact.file_path }}</code>
+                                    {% endif %}
+                                </td>
+                                <td>{{ artifact.artifact.created_at|date:"Y-m-d H:i" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -128,17 +134,29 @@
                         <tr>
                             <th scope="col">model_type</th>
                             <th scope="col">file_path</th>
-                            <th scope="col">params_json</th>
+                            <th scope="col">train_rows</th>
+                            <th scope="col">valid_rows</th>
+                            <th scope="col">test_rows</th>
+                            <th scope="col">feature_count</th>
                             <th scope="col">created_at</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for artifact in model_artifacts %}
                             <tr>
-                                <td>{{ artifact.get_model_type_display }}</td>
-                                <td>{{ artifact.file_path }}</td>
-                                <td>{{ artifact.params_json|default:"-" }}</td>
-                                <td>{{ artifact.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ artifact.artifact.get_model_type_display }}</td>
+                                <td class="path-cell">
+                                    {% if artifact.file_url %}
+                                        <a class="file-link" href="{{ artifact.file_url }}">{{ artifact.artifact.file_path }}</a>
+                                    {% else %}
+                                        <code>{{ artifact.artifact.file_path }}</code>
+                                    {% endif %}
+                                </td>
+                                <td>{{ artifact.train_rows|default_if_none:"-" }}</td>
+                                <td>{{ artifact.valid_rows|default_if_none:"-" }}</td>
+                                <td>{{ artifact.test_rows|default_if_none:"-" }}</td>
+                                <td>{{ artifact.feature_count|default_if_none:"-" }}</td>
+                                <td>{{ artifact.artifact.created_at|date:"Y-m-d H:i" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -169,14 +187,20 @@
                     <tbody>
                         {% for metric in metric_snapshots %}
                             <tr>
-                                <td>{{ metric.get_model_type_display }}</td>
-                                <td>{{ metric.accuracy|default_if_none:"-" }}</td>
-                                <td>{{ metric.precision|default_if_none:"-" }}</td>
-                                <td>{{ metric.recall|default_if_none:"-" }}</td>
-                                <td>{{ metric.f1|default_if_none:"-" }}</td>
-                                <td>{{ metric.roc_auc|default_if_none:"-" }}</td>
-                                <td>{{ metric.confusion_matrix_json|default:"-" }}</td>
-                                <td>{{ metric.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ metric.metric.get_model_type_display }}</td>
+                                <td class="metric-value">{{ metric.accuracy|default_if_none:"-" }}</td>
+                                <td class="metric-value">{{ metric.precision|default_if_none:"-" }}</td>
+                                <td class="metric-value">{{ metric.recall|default_if_none:"-" }}</td>
+                                <td class="metric-value">{{ metric.f1|default_if_none:"-" }}</td>
+                                <td class="metric-value">{{ metric.roc_auc|default_if_none:"-" }}</td>
+                                <td>
+                                    {% if metric.confusion_matrix %}
+                                        <pre class="confusion-matrix">{{ metric.confusion_matrix }}</pre>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ metric.metric.created_at|date:"Y-m-d H:i" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -202,9 +226,15 @@
                     <tbody>
                         {% for artifact in report_artifacts %}
                             <tr>
-                                <td>{{ artifact.get_report_type_display }}</td>
-                                <td>{{ artifact.file_path }}</td>
-                                <td>{{ artifact.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ artifact.artifact.get_report_type_display }}</td>
+                                <td class="path-cell">
+                                    {% if artifact.file_url %}
+                                        <a class="file-link" href="{{ artifact.file_url }}">{{ artifact.artifact.file_path }}</a>
+                                    {% else %}
+                                        <code>{{ artifact.artifact.file_path }}</code>
+                                    {% endif %}
+                                </td>
+                                <td>{{ artifact.artifact.created_at|date:"Y-m-d H:i" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

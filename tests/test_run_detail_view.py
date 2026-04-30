@@ -1,0 +1,124 @@
+import os
+import unittest
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+import django
+from django.test import Client
+
+django.setup()
+
+from runs.models import (  # noqa: E402
+    DatasetArtifact,
+    MetricSnapshot,
+    ModelArtifact,
+    PipelineRun,
+    ReportArtifact,
+)
+
+
+class RunDetailViewTests(unittest.TestCase):
+    def setUp(self):
+        self.client = Client(HTTP_HOST="localhost")
+        self.run_ids = []
+
+    def tearDown(self):
+        PipelineRun.objects.filter(id__in=self.run_ids).delete()
+
+    def test_artifact_links_model_summary_and_metrics_are_readable(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        DatasetArtifact.objects.create(
+            run=run,
+            artifact_type=DatasetArtifact.ArtifactType.FINAL,
+            symbol="BTCUSDT",
+            file_path="datasets/final/final.parquet",
+            row_count=73,
+        )
+        ModelArtifact.objects.create(
+            run=run,
+            model_type=ModelArtifact.ModelType.BASELINE,
+            file_path="models/model_baseline.joblib",
+            params_json={
+                "feature_columns": ["feature_1", "feature_2", "feature_3"],
+                "train_rows": 70,
+                "valid_rows": 15,
+                "test_rows": 15,
+            },
+        )
+        MetricSnapshot.objects.create(
+            run=run,
+            model_type=ModelArtifact.ModelType.BASELINE,
+            accuracy=0.87654321,
+            precision=0.81234567,
+            recall=0.7,
+            f1=0.754321,
+            roc_auc=0.912345,
+            confusion_matrix_json=[[5, 1], [2, 4]],
+        )
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.METRICS_PLOT,
+            file_path="reports/metrics.png",
+        )
+
+        response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('href="/media/datasets/final/final.parquet"', html)
+        self.assertIn('href="/media/models/model_baseline.joblib"', html)
+        self.assertIn('href="/media/reports/metrics.png"', html)
+        self.assertIn("0.8765", html)
+        self.assertIn("0.8123", html)
+        self.assertIn("0.7000", html)
+        self.assertIn("0.7543", html)
+        self.assertIn("0.9123", html)
+        self.assertIn("[ 5  1 ]", html)
+        self.assertIn("[ 2  4 ]", html)
+        self.assertIn(">70<", html)
+        self.assertIn(">15<", html)
+        self.assertIn(">3<", html)
+        self.assertNotIn("feature_columns", html)
+
+    def test_unsafe_artifact_path_renders_as_text_without_media_link(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        DatasetArtifact.objects.create(
+            run=run,
+            artifact_type=DatasetArtifact.ArtifactType.RAW,
+            file_path="../secret.csv",
+            row_count=10,
+        )
+
+        response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("../secret.csv", html)
+        self.assertNotIn('href="/media/../secret.csv"', html)
+
+    def test_empty_states_still_render(self):
+        run = self._create_run(status=PipelineRun.Status.CREATED)
+
+        response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Dataset artifacts для этого запуска пока нет.", html)
+        self.assertIn("Model artifacts для этого запуска пока нет.", html)
+        self.assertIn("Metric snapshots для этого запуска пока нет.", html)
+        self.assertIn("Report artifacts для этого запуска пока нет.", html)
+
+    def _create_run(self, status):
+        run = PipelineRun.objects.create(
+            name="Run detail view test",
+            status=status,
+            symbols_json=["BTCUSDT"],
+            interval="1h",
+            target_horizon=3,
+        )
+        self.run_ids.append(run.id)
+        return run
+
+
+if __name__ == "__main__":
+    unittest.main()

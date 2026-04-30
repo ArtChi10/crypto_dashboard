@@ -272,6 +272,12 @@ http://127.0.0.1:8000/runs/1/
 - `ReportArtifact`;
 - сообщение об ошибке, если оно записано в `PipelineRun.error_message`.
 
+Для artifacts, которые лежат внутри `MEDIA_ROOT`, `file_path` показывается как
+ссылка вида `/media/...`. Для model artifacts страница выводит summary из
+`params_json`: `train_rows`, `valid_rows`, `test_rows` и `feature_count`.
+Classification metrics округляются до 4 знаков, а confusion matrix показывается
+в читаемом виде.
+
 Если artifacts или metrics еще не созданы, соответствующие таблицы будут
 пустыми.
 
