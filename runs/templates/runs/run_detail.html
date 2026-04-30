@@ -214,31 +214,27 @@
     <section class="section" aria-label="Report artifacts">
         <h2>ReportArtifact</h2>
         {% if report_artifacts %}
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">report_type</th>
-                            <th scope="col">file_path</th>
-                            <th scope="col">created_at</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for artifact in report_artifacts %}
-                            <tr>
-                                <td>{{ artifact.artifact.get_report_type_display }}</td>
-                                <td class="path-cell">
-                                    {% if artifact.file_url %}
-                                        <a class="file-link" href="{{ artifact.file_url }}">{{ artifact.artifact.file_path }}</a>
-                                    {% else %}
-                                        <code>{{ artifact.artifact.file_path }}</code>
-                                    {% endif %}
-                                </td>
-                                <td>{{ artifact.artifact.created_at|date:"Y-m-d H:i" }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="report-gallery">
+                {% for artifact in report_artifacts %}
+                    <article class="report-card">
+                        <div class="report-card__header">
+                            <h3>{{ artifact.artifact.get_report_type_display }}</h3>
+                            <span class="muted">{{ artifact.artifact.created_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                        <div class="report-card__path">
+                            {% if artifact.file_url %}
+                                <a class="file-link" href="{{ artifact.file_url }}">{{ artifact.artifact.file_path }}</a>
+                            {% else %}
+                                <code>{{ artifact.artifact.file_path }}</code>
+                            {% endif %}
+                        </div>
+                        {% if artifact.image_url %}
+                            <a class="report-card__image-link" href="{{ artifact.file_url }}">
+                                <img src="{{ artifact.image_url }}" alt="{{ artifact.artifact.get_report_type_display }} report">
+                            </a>
+                        {% endif %}
+                    </article>
+                {% endfor %}
             </div>
         {% else %}
             <p class="empty-state">Report artifacts для этого запуска пока нет.</p>

@@ -40,7 +40,9 @@ def run_detail(request, pk):
                 _model_artifact_presenter(artifact) for artifact in model_artifacts
             ],
             "metric_snapshots": [_metric_snapshot_presenter(metric) for metric in metric_snapshots],
-            "report_artifacts": [_artifact_presenter(artifact) for artifact in report_artifacts],
+            "report_artifacts": [
+                _report_artifact_presenter(artifact) for artifact in report_artifacts
+            ],
         },
     )
 
@@ -67,6 +69,16 @@ def _model_artifact_presenter(artifact):
     }
 
 
+def _report_artifact_presenter(artifact):
+    file_url = _media_url_for_path(artifact.file_path)
+
+    return {
+        "artifact": artifact,
+        "file_url": file_url,
+        "image_url": _report_image_url(artifact.file_path, file_url),
+    }
+
+
 def _metric_snapshot_presenter(metric):
     return {
         "metric": metric,
@@ -87,6 +99,21 @@ def _media_url_for_path(file_path):
         return None
 
     return f"{settings.MEDIA_URL.rstrip('/')}/{relative_path}"
+
+
+def _report_image_url(file_path, file_url):
+    if file_url is None:
+        return None
+
+    relative_path = _relative_media_path(file_path)
+    if relative_path is None:
+        return None
+    if not relative_path.startswith("reports/"):
+        return None
+    if not relative_path.lower().endswith(".png"):
+        return None
+
+    return file_url
 
 
 def _relative_media_path(file_path):

@@ -68,6 +68,7 @@ class RunDetailViewTests(unittest.TestCase):
         self.assertIn('href="/media/datasets/final/final.parquet"', html)
         self.assertIn('href="/media/models/model_baseline.joblib"', html)
         self.assertIn('href="/media/reports/metrics.png"', html)
+        self.assertIn('<img src="/media/reports/metrics.png"', html)
         self.assertIn("0.8765", html)
         self.assertIn("0.8123", html)
         self.assertIn("0.7000", html)
@@ -95,6 +96,36 @@ class RunDetailViewTests(unittest.TestCase):
         html = response.content.decode()
         self.assertIn("../secret.csv", html)
         self.assertNotIn('href="/media/../secret.csv"', html)
+
+    def test_report_images_render_only_for_safe_png_paths(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.TARGET_DISTRIBUTION,
+            file_path="reports/target_distribution.png",
+        )
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.METRICS_PLOT,
+            file_path="reports/metrics.json",
+        )
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.FEATURE_IMPORTANCE,
+            file_path="../reports/feature_importance.png",
+        )
+
+        response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('href="/media/reports/target_distribution.png"', html)
+        self.assertIn('<img src="/media/reports/target_distribution.png"', html)
+        self.assertIn('href="/media/reports/metrics.json"', html)
+        self.assertNotIn('<img src="/media/reports/metrics.json"', html)
+        self.assertIn("../reports/feature_importance.png", html)
+        self.assertNotIn('href="/media/../reports/feature_importance.png"', html)
+        self.assertNotIn('<img src="/media/../reports/feature_importance.png"', html)
 
     def test_empty_states_still_render(self):
         run = self._create_run(status=PipelineRun.Status.CREATED)

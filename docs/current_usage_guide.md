@@ -279,7 +279,10 @@ http://127.0.0.1:8000/runs/1/
 ссылка вида `/media/...`. Для model artifacts страница выводит summary из
 `params_json`: `train_rows`, `valid_rows`, `test_rows` и `feature_count`.
 Classification metrics округляются до 4 знаков, а confusion matrix показывается
-в читаемом виде.
+в читаемом виде. PNG-файлы `ReportArtifact` из `media/reports/` дополнительно
+показываются прямо на странице как inline images; ссылка на файл при этом
+остается кликабельной. Non-PNG reports и небезопасные пути отображаются без
+inline image.
 
 Если artifacts или metrics еще не созданы, соответствующие таблицы будут
 пустыми.
