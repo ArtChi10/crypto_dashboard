@@ -422,6 +422,29 @@ processed и final datasets, models и metrics. Если pipeline падает �
 raw save, raw artifact остается у запуска, run получает статус `failed`, а
 ошибка записывается в `error_message`.
 
+## Что делает run_csv_pipeline command
+
+Management command `run_csv_pipeline` - это CLI-вход в тот же сценарий, что и
+страница `/upload/`.
+
+Пример:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv tmp_cli_check/input.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-05 --target-horizon 3
+```
+
+Команда сама не строит features и не обучает модели напрямую. Она проверяет путь
+к CSV, проверяет CLI flags и вызывает `CsvPipelineUploadUseCase`. Поэтому UI и
+CLI проходят через один application слой:
+
+```text
+CSV input -> CsvPipelineUploadUseCase -> RunPipelineUseCase -> FullPipelineService
+```
+
+Если указать `--skip-baseline`, baseline не обучается. Если указать
+`--skip-catboost`, CatBoost не обучается. Оба flags одновременно запрещены,
+потому что pipeline должен обучить хотя бы одну модель.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -501,6 +524,7 @@ raw data
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.
 - Синхронный запуск pipeline из raw CSV через `/upload/`.
+- CLI-запуск pipeline из raw CSV через `run_csv_pipeline`.
 
 ## Будет позже
 

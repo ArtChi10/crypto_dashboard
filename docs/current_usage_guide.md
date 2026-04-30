@@ -56,7 +56,8 @@ media/ = большие файлы datasets, models, reports
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
 - `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
-- `CsvPipelineUploadUseCase` для orchestration ручной CSV-загрузки из UI.
+- `CsvPipelineUploadUseCase` для orchestration ручной CSV-загрузки из UI и CLI.
+- Management command `run_csv_pipeline` для запуска pipeline из CSV через CLI.
 
 ## Что еще не работает
 
@@ -219,6 +220,29 @@ timestamp, open, high, low, close, volume, symbol
 `/runs/<id>/`, а `PipelineRun.status` становится `Failed` и ошибка записывается
 в `PipelineRun.error_message`. Если ошибка произошла после сохранения raw CSV,
 raw artifact остается у запуска для воспроизводимости.
+
+## Как запустить raw CSV pipeline из CLI
+
+Management command использует тот же `CsvPipelineUploadUseCase`, что и страница
+`/upload/`. Команда не дублирует pipeline-логику, а только проверяет CLI-аргументы
+и передает CSV-файл в use case.
+
+Пример:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv tmp_cli_check/input.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-05 --target-horizon 3
+```
+
+Опциональные flags:
+
+- `--skip-baseline` - не обучать baseline-модель;
+- `--skip-catboost` - не обучать CatBoost-модель.
+
+Нельзя указать оба skip flags одновременно: pipeline должен обучить хотя бы одну
+модель. При успехе команда выводит `run id`, `run status` и detail URL вида
+`/runs/<id>/`. При ошибке команда завершится через `CommandError`; если
+`PipelineRun` уже был создан, его статус станет `failed`, а ошибка попадет в
+`PipelineRun.error_message`.
 
 ## Как открыть /runs/ и /runs/<id>/
 
@@ -524,5 +548,6 @@ http://127.0.0.1:8000/admin/
 - Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная Dashboard-форма остается metadata-only.
-- CSV upload запускает pipeline синхронно, без async queue.
-- `RunPipelineUseCase` подключен к `/upload/`, но не к основной Dashboard-форме.
+- CSV upload и CLI command запускают pipeline синхронно, без async queue.
+- `CsvPipelineUploadUseCase` подключен к `/upload/` и `run_csv_pipeline`, но не к
+  основной Dashboard-форме.
