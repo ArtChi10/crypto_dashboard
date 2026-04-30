@@ -18,6 +18,7 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationService,
 )
 from mlcore.services.report_service import (
+    FeatureImportanceReportService,
     MetricsComparisonReportService,
     TargetDistributionReportService,
 )
@@ -30,6 +31,7 @@ class FullPipelineResult:
     catboost_result: CatBoostTrainingResult | None
     target_distribution_report_path: Path | None = None
     metrics_comparison_report_path: Path | None = None
+    feature_importance_report_path: Path | None = None
 
 
 class FullPipelineService:
@@ -41,6 +43,7 @@ class FullPipelineService:
         dataset_repository: DatasetRepository | None = None,
         target_distribution_report_service: TargetDistributionReportService | None = None,
         metrics_comparison_report_service: MetricsComparisonReportService | None = None,
+        feature_importance_report_service: FeatureImportanceReportService | None = None,
     ) -> None:
         self.artifact_repository = self._infer_artifact_repository(
             dataset_preparation_service,
@@ -73,6 +76,9 @@ class FullPipelineService:
         )
         self.metrics_comparison_report_service = (
             metrics_comparison_report_service or MetricsComparisonReportService()
+        )
+        self.feature_importance_report_service = (
+            feature_importance_report_service or FeatureImportanceReportService()
         )
 
     def run(
@@ -131,12 +137,26 @@ class FullPipelineService:
                 ),
             )
 
+        feature_importance_report_path = None
+        if catboost_result is not None and catboost_result.feature_importances:
+            feature_importance_report_path = self.feature_importance_report_service.build(
+                list(catboost_result.feature_importances),
+                list(catboost_result.feature_importances.values()),
+                self._report_path(
+                    "feature_importance",
+                    run_id=run_id,
+                    final_path=preparation_result.final_path,
+                    extension="png",
+                ),
+            )
+
         return FullPipelineResult(
             preparation_result=preparation_result,
             baseline_result=baseline_result,
             catboost_result=catboost_result,
             target_distribution_report_path=target_distribution_report_path,
             metrics_comparison_report_path=metrics_comparison_report_path,
+            feature_importance_report_path=feature_importance_report_path,
         )
 
     @staticmethod

@@ -17,6 +17,7 @@ class RunPersistenceResult:
     catboost_metric_snapshot: Any | None
     target_distribution_report_artifact: Any | None = None
     metrics_comparison_report_artifact: Any | None = None
+    feature_importance_report_artifact: Any | None = None
 
 
 class RunPersistenceService:
@@ -96,6 +97,19 @@ class RunPersistenceService:
                     file_path=self._metadata_path(metrics_comparison_report_path),
                 )
 
+            feature_importance_report_artifact = None
+            feature_importance_report_path = getattr(
+                result,
+                "feature_importance_report_path",
+                None,
+            )
+            if feature_importance_report_path is not None:
+                feature_importance_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=ReportArtifact.ReportType.FEATURE_IMPORTANCE,
+                    file_path=self._metadata_path(feature_importance_report_path),
+                )
+
         return RunPersistenceResult(
             processed_dataset_artifact=processed_dataset_artifact,
             final_dataset_artifact=final_dataset_artifact,
@@ -105,6 +119,7 @@ class RunPersistenceService:
             catboost_metric_snapshot=catboost_metric_snapshot,
             target_distribution_report_artifact=target_distribution_report_artifact,
             metrics_comparison_report_artifact=metrics_comparison_report_artifact,
+            feature_importance_report_artifact=feature_importance_report_artifact,
         )
 
     @classmethod

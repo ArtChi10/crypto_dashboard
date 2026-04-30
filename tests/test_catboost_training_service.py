@@ -34,6 +34,7 @@ class CatBoostTrainingServiceTests(unittest.TestCase):
             set(result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
         )
+        self.assertEqual(set(result.feature_importances), {"feature_1", "feature_2"})
 
         loaded = ModelRepository().load(result.model_path)
         self.assertEqual(len(loaded.predict(df[result.feature_columns])), len(df))
@@ -58,6 +59,7 @@ class CatBoostTrainingServiceTests(unittest.TestCase):
         self.assertEqual(model_repository.saved_model, trainer.model)
         self.assertEqual(model_repository.saved_path, artifact_repository.path)
         self.assertEqual(result.metrics, {"accuracy": 1.0})
+        self.assertEqual(result.feature_importances, {"feature_1": 0.6, "feature_2": 0.4})
 
     def test_train_and_evaluate_raises_for_missing_target(self):
         service = CatBoostTrainingService(
@@ -98,7 +100,7 @@ class RecordingTrainer:
         self.feature_columns = None
         self.train_rows = None
         self.valid_rows = None
-        self.model = object()
+        self.model = RecordingModel()
 
     def get_feature_columns(self, df):
         self.feature_columns = ["feature_1", "feature_2"]
@@ -110,6 +112,11 @@ class RecordingTrainer:
         self.y_train_rows = len(y_train)
         self.y_valid_rows = len(y_valid)
         return self.model
+
+
+class RecordingModel:
+    def get_feature_importance(self):
+        return [0.6, 0.4]
 
 
 class RecordingEvaluator:

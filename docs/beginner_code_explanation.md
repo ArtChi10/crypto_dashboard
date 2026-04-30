@@ -334,7 +334,9 @@ baseline-модели обучает `CatBoostClassifier`.
 5. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
 6. Если есть хотя бы один model result, строит PNG comparison report через
    `MetricsComparisonReportService`.
-7. Возвращает общий результат: preparation result, baseline result, CatBoost
+7. Если CatBoost вернул feature importances, строит PNG feature importance report
+   через `FeatureImportanceReportService`.
+8. Возвращает общий результат: preparation result, baseline result, CatBoost
    result и paths к report files.
 
 Если обе training-галочки выключены, service сразу выдаст `ValueError`.
@@ -362,10 +364,13 @@ metadata.
 - `ModelArtifact` для CatBoost, если CatBoost запускался;
 - `MetricSnapshot` для CatBoost, если CatBoost запускался;
 - `ReportArtifact` для target distribution PNG;
-- `ReportArtifact` для metrics comparison PNG.
+- `ReportArtifact` для metrics comparison PNG;
+- `ReportArtifact` для CatBoost feature importance PNG.
 
 Если `roc_auc` равен `None`, metrics comparison PNG не падает: это значение
 показывается как `N/A`.
+Если CatBoost выключен или importances пустые, feature importance PNG не
+создается.
 
 Он не обучает модели, не строит признаки, не скачивает данные и не меняет UI.
 Он только записывает в SQLite ссылки на уже созданные файлы и уже посчитанные
@@ -530,6 +535,7 @@ raw data
 - Ручной `CatBoostTrainingService`.
 - `TargetDistributionReportService`.
 - `MetricsComparisonReportService`.
+- `FeatureImportanceReportService`.
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.

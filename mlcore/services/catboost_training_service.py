@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,7 @@ class CatBoostTrainingResult:
     train_rows: int
     valid_rows: int
     test_rows: int
+    feature_importances: dict[str, float] = field(default_factory=dict)
 
 
 class CatBoostTrainingService:
@@ -60,6 +61,7 @@ class CatBoostTrainingService:
             extension="cbm",
         )
         self.model_repository.save(model, model_path)
+        feature_importances = self._feature_importances(model, feature_columns)
 
         return CatBoostTrainingResult(
             model_path=model_path,
@@ -68,9 +70,21 @@ class CatBoostTrainingService:
             train_rows=len(train_df),
             valid_rows=len(valid_df),
             test_rows=len(test_df),
+            feature_importances=feature_importances,
         )
 
     @classmethod
     def _validate_dataset(cls, df: Any) -> None:
         if cls.TARGET_COLUMN not in df.columns:
             raise ValueError(f"Missing required columns: {cls.TARGET_COLUMN}")
+
+    @staticmethod
+    def _feature_importances(model: Any, feature_columns: list[str]) -> dict[str, float]:
+        if not hasattr(model, "get_feature_importance"):
+            return {}
+
+        importances = model.get_feature_importance()
+        return {
+            feature_name: float(importance)
+            for feature_name, importance in zip(feature_columns, importances, strict=False)
+        }

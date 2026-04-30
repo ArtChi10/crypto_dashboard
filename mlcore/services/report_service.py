@@ -129,3 +129,57 @@ class MetricsComparisonReportService:
                 values.append(float(value))
                 missing_flags.append(False)
         return values, missing_flags
+
+
+class FeatureImportanceReportService:
+    def build(
+        self,
+        feature_names: list[str],
+        importances: Any,
+        path: str | Path,
+        top_n: int = 20,
+    ) -> Path:
+        feature_importances = self._feature_importances(feature_names, importances, top_n=top_n)
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        labels = [feature_name for feature_name, _ in feature_importances]
+        values = [importance for _, importance in feature_importances]
+        y_positions = list(range(len(labels)))
+
+        figure_height = max(3.2, 0.34 * len(labels) + 1.2)
+        figure, axis = plt.subplots(figsize=(7.2, figure_height))
+        axis.barh(y_positions, values, color="#175cd3")
+        axis.set_yticks(y_positions, labels)
+        axis.invert_yaxis()
+        axis.set_title("CatBoost feature importance")
+        axis.set_xlabel("importance")
+        axis.grid(axis="x", color="#d9dee7", linewidth=0.8, alpha=0.8)
+        axis.margins(x=0.12)
+        axis.bar_label(axis.containers[0], fmt="%.2f", padding=3)
+        figure.tight_layout()
+        figure.savefig(path, format="png", dpi=120)
+        plt.close(figure)
+
+        return path
+
+    @staticmethod
+    def _feature_importances(
+        feature_names: list[str],
+        importances: Any,
+        top_n: int,
+    ) -> list[tuple[str, float]]:
+        values = [float(importance) for importance in list(importances)]
+        if not feature_names or not values:
+            raise ValueError("feature_names and importances must not be empty.")
+        if len(feature_names) != len(values):
+            raise ValueError("feature_names and importances must have the same length.")
+        if top_n < 1:
+            raise ValueError("top_n must be greater than or equal to 1.")
+
+        feature_importances = sorted(
+            zip(feature_names, values, strict=True),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        return feature_importances[:top_n]
