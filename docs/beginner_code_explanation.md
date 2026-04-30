@@ -405,7 +405,42 @@ metrics.
 который вызвал use case, видит проблему, а в базе остается понятный failed run.
 
 Важно: use case не скачивает данные из Binance. Страница `/upload/` читает CSV
-в raw `DataFrame` и передает его в этот use case.
+в raw `DataFrame` и передает его в этот use case. Binance-загрузка теперь есть
+отдельным provider-ом, но пока не подключена к этому use case.
+
+## Что делает BinanceMarketDataProvider
+
+`BinanceMarketDataProvider` находится в `mlcore/loaders/binance_loader.py`.
+
+Это infrastructure-компонент для Binance Spot REST API. Он обращается к endpoint
+`/api/v3/klines`, загружает candles и возвращает pandas `DataFrame` с колонками:
+
+- `timestamp`;
+- `open`;
+- `high`;
+- `low`;
+- `close`;
+- `volume`;
+- `symbol`.
+
+Он приводит `timestamp` к datetime, а OHLCV-колонки к numeric. Если период больше
+1000 candles, provider делает несколько запросов: следующий `startTime` равен
+`last_open_time + 1 ms`.
+
+Для тестов реальный интернет не используется: вместо настоящего
+`requests.Session` передается fake session. В production-коде можно создать
+provider так:
+
+```python
+from mlcore.loaders import BinanceMarketDataProvider
+
+provider = BinanceMarketDataProvider()
+raw_df = provider.get_ohlcv("BTCUSDT", "1h", "2024-01-01", "2024-01-05")
+```
+
+Provider не сохраняет файлы и не создает `PipelineRun`. Он только получает raw
+OHLCV-таблицу. Ошибки API, пустой ответ и network errors превращаются в
+`BinanceMarketDataError`.
 
 ## Что делает CSV upload page
 
@@ -536,6 +571,7 @@ raw data
 - `TargetDistributionReportService`.
 - `MetricsComparisonReportService`.
 - `FeatureImportanceReportService`.
+- `BinanceMarketDataProvider`.
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.
@@ -544,6 +580,6 @@ raw data
 
 ## Будет позже
 
-- Binance loader.
+- Подключение Binance provider к UI/CLI pipeline.
 - Async/background queue для долгих запусков.
 - Подключение главной Dashboard-формы к реальному pipeline.

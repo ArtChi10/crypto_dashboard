@@ -42,6 +42,8 @@ media/ = большие файлы datasets, models, reports
   и синхронного запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
+- `BinanceMarketDataProvider` для загрузки OHLCV candles из Binance Spot REST API
+  в pandas `DataFrame`.
 - `DataCleaner` для очистки OHLCV-данных.
 - `FeatureBuilder` для построения признаков.
 - `TargetBuilder` для построения target-колонки.
@@ -64,7 +66,7 @@ media/ = большие файлы datasets, models, reports
 
 ## Что еще не работает
 
-- Нет загрузчика данных из Binance.
+- Binance provider пока не подключен к UI, CLI command или `PipelineRun`.
 - Форма на главной странице создает только metadata-запись `PipelineRun`.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная форма не запускает полный pipeline; для ручного запуска используйте `/upload/`.
@@ -446,8 +448,44 @@ metrics. Его задача только сохранить metadata в Django 
 записывает короткий текст ошибки в `error_message`, заполняет `finished_at` и
 повторно выбрасывает исключение.
 
-Это все еще ручной Python use case. UI пока не вызывает его автоматически и
-Binance download в нем не реализован.
+Это все еще ручной Python use case. UI пока не вызывает его автоматически.
+Загрузка данных из Binance существует отдельным provider-ом и пока не подключена
+к `RunPipelineUseCase`.
+
+## Как вручную загрузить OHLCV candles из Binance
+
+`BinanceMarketDataProvider` находится в `mlcore.loaders.binance_loader`.
+Он использует Binance Spot REST endpoint `/api/v3/klines`, поддерживает
+пагинацию по 1000 candles за запрос и возвращает pandas `DataFrame` с колонками:
+
+- `timestamp`;
+- `open`;
+- `high`;
+- `low`;
+- `close`;
+- `volume`;
+- `symbol`.
+
+`timestamp` приводится к datetime, а OHLCV-колонки - к numeric.
+
+Пример ручного использования из Python:
+
+```python
+from mlcore.loaders import BinanceMarketDataProvider
+
+provider = BinanceMarketDataProvider()
+df = provider.get_ohlcv(
+    symbol="BTCUSDT",
+    interval="1h",
+    start="2024-01-01",
+    end="2024-01-05",
+)
+print(df.head())
+```
+
+Provider только загружает данные. Он не создает `PipelineRun`, не сохраняет
+datasets и не запускает обучение. Ошибки Binance API, пустой ответ и network
+ошибки превращаются в понятный `BinanceMarketDataError`.
 
 ## Как вручную проверить CatBoostTrainingService
 
@@ -565,7 +603,8 @@ http://127.0.0.1:8000/admin/
 
 ## Current limitations
 
-- Binance download еще нет.
+- Binance provider уже есть, но пока не подключен к `/upload/`,
+  `run_csv_pipeline` или Dashboard-форме.
 - Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная Dashboard-форма остается metadata-only.
