@@ -62,7 +62,8 @@ pipeline. Оно только создает metadata-запись со стат
 
 Для ручного запуска pipeline через UI есть отдельная страница `/upload/`: она
 принимает raw OHLCV CSV, создает `PipelineRun`, сохраняет исходный CSV как raw
-`DatasetArtifact`, запускает pipeline и показывает результат на странице запуска.
+`DatasetArtifact`, запускает pipeline через `CsvPipelineUploadUseCase` и
+показывает результат на странице запуска.
 
 ## Что такое ArtifactRepository
 
@@ -408,9 +409,13 @@ metrics.
 - train_baseline;
 - train_catboost.
 
-После отправки формы Django читает CSV через pandas, создает `PipelineRun`,
-сохраняет исходный CSV в `media/datasets/raw/` и создает raw `DatasetArtifact`
-с `symbol` и `row_count`. Затем страница вызывает `RunPipelineUseCase`.
+После отправки формы view передает cleaned form data в `CsvPipelineUploadUseCase`.
+Сам use case читает CSV через pandas, создает `PipelineRun`, сохраняет исходный
+CSV в `media/datasets/raw/` и создает raw `DatasetArtifact` с `symbol` и
+`row_count`. Затем он вызывает `RunPipelineUseCase`.
+
+Так view остается тонким: он проверяет форму, вызывает один use case и решает,
+сделать redirect на `/runs/<id>/` или показать ошибку формы без 500-страницы.
 
 Если все хорошо, пользователь попадает на `/runs/<id>/`, где видны raw,
 processed и final datasets, models и metrics. Если pipeline падает уже после

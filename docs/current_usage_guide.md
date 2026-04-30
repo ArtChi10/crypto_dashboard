@@ -56,6 +56,7 @@ media/ = большие файлы datasets, models, reports
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
 - `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
+- `CsvPipelineUploadUseCase` для orchestration ручной CSV-загрузки из UI.
 
 ## Что еще не работает
 
@@ -204,9 +205,11 @@ timestamp, open, high, low, close, volume, symbol
 
 4. Нажмите `Загрузить CSV и запустить pipeline`.
 
-Перед запуском pipeline страница сохраняет исходный CSV в `media/datasets/raw/`
-через `DatasetRepository` и создает `DatasetArtifact` с `artifact_type="raw"`,
-`symbol` и `row_count`.
+После отправки формы view вызывает `CsvPipelineUploadUseCase`. Этот use case
+создает `PipelineRun`, читает CSV через pandas, сохраняет исходный CSV в
+`media/datasets/raw/` через `DatasetRepository`, создает `DatasetArtifact` с
+`artifact_type="raw"`, `symbol` и `row_count`, а затем запускает
+`RunPipelineUseCase`.
 
 Для MVP запуск выполняется синхронно прямо во время POST-запроса. После успеха
 страница перенаправляет на `/runs/<id>/`, где видны raw/processed/final

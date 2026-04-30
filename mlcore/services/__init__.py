@@ -6,6 +6,10 @@ from mlcore.services.catboost_training_service import (
     CatBoostTrainingResult,
     CatBoostTrainingService,
 )
+from mlcore.services.csv_pipeline_upload_use_case import (
+    CsvPipelineUploadResult,
+    CsvPipelineUploadUseCase,
+)
 from mlcore.services.dataset_preparation_service import (
     DatasetPreparationResult,
     DatasetPreparationService,
@@ -19,6 +23,8 @@ __all__ = [
     "BaselineTrainingService",
     "CatBoostTrainingResult",
     "CatBoostTrainingService",
+    "CsvPipelineUploadResult",
+    "CsvPipelineUploadUseCase",
     "DatasetPreparationResult",
     "DatasetPreparationService",
     "FullPipelineResult",

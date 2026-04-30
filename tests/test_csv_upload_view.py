@@ -1,14 +1,14 @@
 import os
 import unittest
-from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
+from django.utils import timezone
 
 django.setup()
 
@@ -21,7 +21,6 @@ class CsvUploadViewTests(unittest.TestCase):
         self.run_ids = []
 
     def tearDown(self):
-        self._delete_raw_artifact_files()
         PipelineRun.objects.filter(id__in=self.run_ids).delete()
 
     def test_upload_get_returns_form(self):
@@ -41,7 +40,7 @@ class CsvUploadViewTests(unittest.TestCase):
     def test_valid_csv_creates_run_executes_pipeline_and_redirects_to_detail(self):
         use_case = RecordingUseCase(create_metadata=True)
 
-        with patch("dashboard.views._build_upload_use_case", return_value=use_case):
+        with patch("dashboard.views._build_csv_pipeline_upload_use_case", return_value=use_case):
             response = self.client.post(
                 "/upload/",
                 data=self._form_data(),
@@ -56,8 +55,12 @@ class CsvUploadViewTests(unittest.TestCase):
         self.assertEqual(run.interval, "1h")
         self.assertEqual(run.target_horizon, 3)
         self.assertEqual(run.initiated_by, "manual_csv_upload")
-        self.assertEqual(use_case.seen_run.id, run.id)
-        self.assertEqual(list(use_case.seen_raw_df.columns), EXPECTED_COLUMNS)
+        self.assertEqual(use_case.csv_file_name, "raw.csv")
+        self.assertEqual(use_case.symbol, "BTCUSDT")
+        self.assertEqual(use_case.interval, "1h")
+        self.assertEqual(str(use_case.start_date), "2024-01-01")
+        self.assertEqual(str(use_case.end_date), "2024-01-02")
+        self.assertEqual(use_case.target_horizon, 3)
         self.assertTrue(use_case.train_baseline)
         self.assertTrue(use_case.train_catboost)
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 3)
@@ -67,9 +70,7 @@ class CsvUploadViewTests(unittest.TestCase):
         )
         self.assertEqual(raw_artifact.symbol, "BTCUSDT")
         self.assertEqual(raw_artifact.row_count, 2)
-        self.assertIn("datasets/raw/raw_run_", raw_artifact.file_path)
-        self.assertTrue(raw_artifact.file_path.endswith(".csv"))
-        self.assertTrue((Path(settings.MEDIA_ROOT) / raw_artifact.file_path).exists())
+        self.assertEqual(raw_artifact.file_path, "datasets/raw/raw.csv")
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
 
@@ -83,7 +84,7 @@ class CsvUploadViewTests(unittest.TestCase):
     def test_pipeline_error_marks_run_failed_and_redirects_to_detail(self):
         use_case = FailingUseCase("bad csv")
 
-        with patch("dashboard.views._build_upload_use_case", return_value=use_case):
+        with patch("dashboard.views._build_csv_pipeline_upload_use_case", return_value=use_case):
             response = self.client.post(
                 "/upload/",
                 data=self._form_data(),
@@ -105,7 +106,20 @@ class CsvUploadViewTests(unittest.TestCase):
         )
         self.assertEqual(raw_artifact.symbol, "BTCUSDT")
         self.assertEqual(raw_artifact.row_count, 2)
-        self.assertTrue((Path(settings.MEDIA_ROOT) / raw_artifact.file_path).exists())
+
+    def test_early_use_case_error_without_run_shows_form_error(self):
+        before_count = PipelineRun.objects.count()
+        use_case = EarlyFailingUseCase("could not create run")
+
+        with patch("dashboard.views._build_csv_pipeline_upload_use_case", return_value=use_case):
+            response = self.client.post(
+                "/upload/",
+                data=self._form_data(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(PipelineRun.objects.count(), before_count)
+        self.assertIn("could not create run", response.content.decode())
 
     def test_invalid_form_does_not_create_run_or_500(self):
         before_count = PipelineRun.objects.count()
@@ -141,35 +155,55 @@ class CsvUploadViewTests(unittest.TestCase):
             "train_catboost": "on",
         }
 
-    def _delete_raw_artifact_files(self):
-        raw_artifacts = DatasetArtifact.objects.filter(
-            run_id__in=self.run_ids,
-            artifact_type=DatasetArtifact.ArtifactType.RAW,
-        )
-        for file_path in raw_artifacts.values_list("file_path", flat=True):
-            path = Path(file_path)
-            if not path.is_absolute():
-                path = Path(settings.MEDIA_ROOT) / path
-            if path.exists():
-                path.unlink()
-
 
 class RecordingUseCase:
     def __init__(self, create_metadata=False):
         self.create_metadata = create_metadata
-        self.seen_run = None
-        self.seen_raw_df = None
+        self.csv_file_name = None
+        self.symbol = None
+        self.interval = None
+        self.start_date = None
+        self.end_date = None
+        self.target_horizon = None
         self.train_baseline = None
         self.train_catboost = None
 
-    def execute(self, run, raw_df, train_baseline=True, train_catboost=True):
-        self.seen_run = run
-        self.seen_raw_df = raw_df
+    def execute(
+        self,
+        csv_file,
+        symbol,
+        interval,
+        start_date,
+        end_date,
+        target_horizon,
+        train_baseline=True,
+        train_catboost=True,
+    ):
+        self.csv_file_name = csv_file.name
+        self.symbol = symbol
+        self.interval = interval
+        self.start_date = start_date
+        self.end_date = end_date
+        self.target_horizon = target_horizon
         self.train_baseline = train_baseline
         self.train_catboost = train_catboost
-        run.status = PipelineRun.Status.SUCCESS
-        run.save(update_fields=["status"])
+        run = self._create_run(
+            symbol=symbol,
+            interval=interval,
+            start_date=start_date,
+            end_date=end_date,
+            target_horizon=target_horizon,
+            status=PipelineRun.Status.SUCCESS,
+        )
+        raw_artifact = None
         if self.create_metadata:
+            raw_artifact = DatasetArtifact.objects.create(
+                run=run,
+                artifact_type=DatasetArtifact.ArtifactType.RAW,
+                symbol=symbol,
+                file_path="datasets/raw/raw.csv",
+                row_count=2,
+            )
             DatasetArtifact.objects.create(
                 run=run,
                 artifact_type=DatasetArtifact.ArtifactType.PROCESSED,
@@ -197,14 +231,80 @@ class RecordingUseCase:
                 roc_auc=1.0,
                 confusion_matrix_json=[[1, 0], [0, 1]],
             )
+        return SimpleNamespace(
+            run=run,
+            raw_artifact=raw_artifact,
+            pipeline_result={"ok": True},
+            error_message="",
+        )
+
+    @staticmethod
+    def _create_run(
+        symbol,
+        interval,
+        start_date,
+        end_date,
+        target_horizon,
+        status,
+        error_message="",
+    ):
+        return PipelineRun.objects.create(
+            name=f"Manual CSV upload {symbol} {interval}",
+            status=status,
+            symbols_json=[symbol],
+            interval=interval,
+            start_date=start_date,
+            end_date=end_date,
+            target_horizon=target_horizon,
+            initiated_by="manual_csv_upload",
+            error_message=error_message,
+        )
 
 
 class FailingUseCase:
     def __init__(self, message):
         self.message = message
 
+    def execute(self, symbol, interval, start_date, end_date, target_horizon, **kwargs):
+        now = timezone.now()
+        run = RecordingUseCase._create_run(
+            symbol=symbol,
+            interval=interval,
+            start_date=start_date,
+            end_date=end_date,
+            target_horizon=target_horizon,
+            status=PipelineRun.Status.FAILED,
+            error_message=self.message,
+        )
+        run.started_at = now
+        run.finished_at = now
+        run.save(update_fields=["started_at", "finished_at"])
+        raw_artifact = DatasetArtifact.objects.create(
+            run=run,
+            artifact_type=DatasetArtifact.ArtifactType.RAW,
+            symbol=symbol,
+            file_path="datasets/raw/raw.csv",
+            row_count=2,
+        )
+        return SimpleNamespace(
+            run=run,
+            raw_artifact=raw_artifact,
+            pipeline_result=None,
+            error_message=self.message,
+        )
+
+
+class EarlyFailingUseCase:
+    def __init__(self, message):
+        self.message = message
+
     def execute(self, *args, **kwargs):
-        raise ValueError(self.message)
+        return SimpleNamespace(
+            run=None,
+            raw_artifact=None,
+            pipeline_result=None,
+            error_message=self.message,
+        )
 
 
 EXPECTED_COLUMNS = ["timestamp", "open", "high", "low", "close", "volume", "symbol"]

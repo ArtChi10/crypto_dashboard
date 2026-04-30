@@ -1,20 +1,7 @@
-from pathlib import Path
-
-import pandas as pd
-from django.conf import settings
 from django.shortcuts import redirect, render
-from django.utils import timezone
 
-from mlcore.repositories import ArtifactRepository, DatasetRepository, ModelRepository
-from mlcore.services import (
-    BaselineTrainingService,
-    CatBoostTrainingService,
-    DatasetPreparationService,
-    FullPipelineService,
-    RunPersistenceService,
-    RunPipelineUseCase,
-)
-from runs.models import DatasetArtifact, PipelineRun
+from mlcore.services import CsvPipelineUploadUseCase
+from runs.models import PipelineRun
 
 from .forms import CsvUploadForm, PipelineRunForm
 
@@ -56,23 +43,20 @@ def upload_csv(request):
     if request.method == "POST":
         form = CsvUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            run = _create_upload_run(form.cleaned_data)
-            try:
-                raw_df = pd.read_csv(form.cleaned_data["csv_file"])
-                _save_uploaded_raw_dataset(
-                    run,
-                    raw_df,
-                    symbol=form.cleaned_data["symbol"],
-                )
-                _build_upload_use_case().execute(
-                    run,
-                    raw_df,
-                    train_baseline=form.cleaned_data["train_baseline"],
-                    train_catboost=form.cleaned_data["train_catboost"],
-                )
-            except Exception as exc:
-                _mark_upload_run_failed(run, exc)
-            return redirect("runs:detail", pk=run.pk)
+            result = _build_csv_pipeline_upload_use_case().execute(
+                csv_file=form.cleaned_data["csv_file"],
+                symbol=form.cleaned_data["symbol"],
+                interval=form.cleaned_data["interval"],
+                start_date=form.cleaned_data["start_date"],
+                end_date=form.cleaned_data["end_date"],
+                target_horizon=form.cleaned_data["target_horizon"],
+                train_baseline=form.cleaned_data["train_baseline"],
+                train_catboost=form.cleaned_data["train_catboost"],
+            )
+            if result.run is not None:
+                return redirect("runs:detail", pk=result.run.pk)
+
+            form.add_error(None, result.error_message or "Не удалось обработать CSV.")
     else:
         form = CsvUploadForm()
 
@@ -85,83 +69,5 @@ def upload_csv(request):
     )
 
 
-def _create_upload_run(cleaned_data):
-    symbol = cleaned_data["symbol"]
-    interval = cleaned_data["interval"]
-    return PipelineRun.objects.create(
-        name=f"Manual CSV upload {symbol} {interval}",
-        status=PipelineRun.Status.CREATED,
-        symbols_json=[symbol],
-        interval=interval,
-        start_date=cleaned_data["start_date"],
-        end_date=cleaned_data["end_date"],
-        target_horizon=cleaned_data["target_horizon"],
-        initiated_by="manual_csv_upload",
-    )
-
-
-def _save_uploaded_raw_dataset(run, raw_df, symbol):
-    artifact_repository = ArtifactRepository(settings.MEDIA_ROOT)
-    raw_path = artifact_repository.dataset_path(
-        DatasetArtifact.ArtifactType.RAW,
-        run.id,
-        symbol=symbol,
-        extension="csv",
-    )
-    DatasetRepository().save(raw_df, raw_path)
-    DatasetArtifact.objects.create(
-        run=run,
-        artifact_type=DatasetArtifact.ArtifactType.RAW,
-        symbol=symbol,
-        file_path=_metadata_path(raw_path),
-        row_count=len(raw_df),
-    )
-
-
-def _build_upload_use_case():
-    artifact_repository = ArtifactRepository(settings.MEDIA_ROOT)
-    dataset_repository = DatasetRepository()
-    model_repository = ModelRepository()
-    dataset_preparation_service = DatasetPreparationService(
-        artifact_repository=artifact_repository,
-        dataset_repository=dataset_repository,
-    )
-    baseline_training_service = BaselineTrainingService(
-        artifact_repository=artifact_repository,
-        model_repository=model_repository,
-    )
-    catboost_training_service = CatBoostTrainingService(
-        artifact_repository=artifact_repository,
-        model_repository=model_repository,
-    )
-    full_pipeline_service = FullPipelineService(
-        dataset_preparation_service=dataset_preparation_service,
-        baseline_training_service=baseline_training_service,
-        catboost_training_service=catboost_training_service,
-        dataset_repository=dataset_repository,
-    )
-    return RunPipelineUseCase(
-        full_pipeline_service=full_pipeline_service,
-        persistence_service=RunPersistenceService(),
-    )
-
-
-def _metadata_path(path):
-    path = Path(path)
-    if not path.is_absolute():
-        return path.as_posix()
-
-    try:
-        return path.resolve().relative_to(Path(settings.MEDIA_ROOT).resolve()).as_posix()
-    except ValueError:
-        return path.as_posix()
-
-
-def _mark_upload_run_failed(run, exc):
-    run.refresh_from_db()
-    run.status = PipelineRun.Status.FAILED
-    if run.started_at is None:
-        run.started_at = timezone.now()
-    run.finished_at = timezone.now()
-    run.error_message = (str(exc) or exc.__class__.__name__)[:1000]
-    run.save(update_fields=["status", "started_at", "finished_at", "error_message"])
+def _build_csv_pipeline_upload_use_case():
+    return CsvPipelineUploadUseCase()
