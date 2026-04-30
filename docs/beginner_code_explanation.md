@@ -329,10 +329,11 @@ baseline-модели обучает `CatBoostClassifier`.
 
 1. Запускает `DatasetPreparationService`.
 2. Загружает final parquet dataset через `DatasetRepository`.
-3. Если включен `train_baseline`, запускает `BaselineTrainingService`.
-4. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
-5. Возвращает общий результат: preparation result, baseline result и CatBoost
-   result.
+3. Строит PNG report распределения `target` через `TargetDistributionReportService`.
+4. Если включен `train_baseline`, запускает `BaselineTrainingService`.
+5. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
+6. Возвращает общий результат: preparation result, baseline result, CatBoost
+   result и path к target distribution report.
 
 Если обе training-галочки выключены, service сразу выдаст `ValueError`.
 
@@ -357,7 +358,8 @@ metadata.
 - `ModelArtifact` для baseline, если baseline запускался;
 - `MetricSnapshot` для baseline, если baseline запускался;
 - `ModelArtifact` для CatBoost, если CatBoost запускался;
-- `MetricSnapshot` для CatBoost, если CatBoost запускался.
+- `MetricSnapshot` для CatBoost, если CatBoost запускался;
+- `ReportArtifact` для target distribution PNG.
 
 Он не обучает модели, не строит признаки, не скачивает данные и не меняет UI.
 Он только записывает в SQLite ссылки на уже созданные файлы и уже посчитанные
@@ -520,6 +522,7 @@ raw data
 - CatBoost trainer.
 - Ручной `BaselineTrainingService`.
 - Ручной `CatBoostTrainingService`.
+- `TargetDistributionReportService`.
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.

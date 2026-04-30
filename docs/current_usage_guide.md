@@ -53,6 +53,7 @@ media/ = большие файлы datasets, models, reports
 - `ModelRepository` для сохранения и загрузки `.joblib`, `.pkl`, `.cbm`.
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
+- `TargetDistributionReportService` для PNG-отчета распределения target.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
 - `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
@@ -404,11 +405,12 @@ metrics. Его задача только сохранить metadata в Django 
 - `DatasetArtifact` для processed dataset;
 - `DatasetArtifact` для final dataset;
 - `ModelArtifact` и `MetricSnapshot` для baseline, если baseline обучался;
-- `ModelArtifact` и `MetricSnapshot` для CatBoost, если CatBoost обучался.
+- `ModelArtifact` и `MetricSnapshot` для CatBoost, если CatBoost обучался;
+- `ReportArtifact` для `target_distribution`, если `FullPipelineService` создал
+  PNG-отчет.
 
 Сервис использует `transaction.atomic()`, чтобы связанные metadata-записи
-создавались одной транзакцией. `ReportArtifact` пока не создается, потому что
-графиков в этом pipeline layer еще нет.
+создавались одной транзакцией.
 
 Для `file_path` действует такое правило: если путь абсолютный и лежит внутри
 `MEDIA_ROOT`, сохраняется путь относительно `MEDIA_ROOT`; иначе сохраняется

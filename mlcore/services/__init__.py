@@ -15,6 +15,7 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationService,
 )
 from mlcore.services.full_pipeline_service import FullPipelineResult, FullPipelineService
+from mlcore.services.report_service import TargetDistributionReportService
 from mlcore.services.run_persistence_service import RunPersistenceResult, RunPersistenceService
 from mlcore.services.run_pipeline_use_case import RunPipelineResult, RunPipelineUseCase
 
@@ -29,6 +30,7 @@ __all__ = [
     "DatasetPreparationService",
     "FullPipelineResult",
     "FullPipelineService",
+    "TargetDistributionReportService",
     "RunPersistenceResult",
     "RunPersistenceService",
     "RunPipelineResult",

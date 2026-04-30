@@ -15,13 +15,14 @@ class RunPersistenceResult:
     baseline_metric_snapshot: Any | None
     catboost_model_artifact: Any | None
     catboost_metric_snapshot: Any | None
+    target_distribution_report_artifact: Any | None = None
 
 
 class RunPersistenceService:
     def save_full_pipeline_result(self, run: Any, result: Any) -> RunPersistenceResult:
         from django.db import transaction
 
-        from runs.models import DatasetArtifact, MetricSnapshot, ModelArtifact
+        from runs.models import DatasetArtifact, MetricSnapshot, ModelArtifact, ReportArtifact
 
         with transaction.atomic():
             processed_dataset_artifact = DatasetArtifact.objects.create(
@@ -68,6 +69,19 @@ class RunPersistenceService:
                     metrics=result.catboost_result.metrics,
                 )
 
+            target_distribution_report_artifact = None
+            target_distribution_report_path = getattr(
+                result,
+                "target_distribution_report_path",
+                None,
+            )
+            if target_distribution_report_path is not None:
+                target_distribution_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=ReportArtifact.ReportType.TARGET_DISTRIBUTION,
+                    file_path=self._metadata_path(target_distribution_report_path),
+                )
+
         return RunPersistenceResult(
             processed_dataset_artifact=processed_dataset_artifact,
             final_dataset_artifact=final_dataset_artifact,
@@ -75,6 +89,7 @@ class RunPersistenceService:
             baseline_metric_snapshot=baseline_metric_snapshot,
             catboost_model_artifact=catboost_model_artifact,
             catboost_metric_snapshot=catboost_metric_snapshot,
+            target_distribution_report_artifact=target_distribution_report_artifact,
         )
 
     @classmethod
@@ -118,10 +133,9 @@ class RunPersistenceService:
     @staticmethod
     def _metadata_path(path: str | Path) -> str:
         path = Path(path)
-        if not path.is_absolute():
-            return path.as_posix()
+        media_root = Path(settings.MEDIA_ROOT).resolve()
 
         try:
-            return path.resolve().relative_to(Path(settings.MEDIA_ROOT).resolve()).as_posix()
+            return path.resolve().relative_to(media_root).as_posix()
         except ValueError:
             return path.as_posix()
