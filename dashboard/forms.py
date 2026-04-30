@@ -143,3 +143,62 @@ class CsvUploadForm(forms.Form):
             raise forms.ValidationError("Выберите хотя бы одну модель для обучения.")
 
         return cleaned_data
+
+
+class BinancePipelineForm(forms.Form):
+    symbol = forms.CharField(
+        label="Symbol",
+        initial="BTCUSDT",
+        max_length=20,
+        widget=forms.TextInput(attrs={"placeholder": "BTCUSDT"}),
+    )
+    interval = forms.CharField(
+        label="Interval",
+        initial="1h",
+        max_length=50,
+    )
+    start_date = forms.DateField(
+        label="Start date",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    end_date = forms.DateField(
+        label="End date",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    target_horizon = forms.IntegerField(
+        label="Target horizon",
+        initial=3,
+        min_value=1,
+    )
+    train_baseline = forms.BooleanField(
+        label="Train baseline",
+        initial=True,
+        required=False,
+    )
+    train_catboost = forms.BooleanField(
+        label="Train CatBoost",
+        initial=True,
+        required=False,
+    )
+
+    def clean_symbol(self):
+        symbol = self.cleaned_data["symbol"].strip().upper()
+        if not SYMBOL_PATTERN.fullmatch(symbol) or symbol.isdigit():
+            raise forms.ValidationError("Используйте тикер вроде BTCUSDT.")
+        return symbol
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date and end_date and end_date < start_date:
+            self.add_error("end_date", "End date не может быть раньше start date.")
+
+        if end_date and end_date > timezone.localdate():
+            self.add_error("end_date", "End date не может быть позже сегодняшней даты.")
+
+        if not cleaned_data.get("train_baseline") and not cleaned_data.get("train_catboost"):
+            raise forms.ValidationError("Выберите хотя бы одну модель для обучения.")
+
+        return cleaned_data

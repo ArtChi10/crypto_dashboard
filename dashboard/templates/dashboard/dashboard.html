@@ -8,6 +8,7 @@
         <h1>Crypto Dashboard</h1>
         <p class="lede">ML-пайплайн прогнозирования направления цены криптовалют.</p>
         <div class="toolbar">
+            <a class="button" href="{% url 'dashboard:binance' %}">Запустить Binance pipeline</a>
             <a class="button" href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a>
             <a class="button button--secondary" href="{% url 'runs:list' %}">История запусков</a>
         </div>

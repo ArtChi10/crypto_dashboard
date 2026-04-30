@@ -40,6 +40,8 @@ media/ = большие файлы datasets, models, reports
 - Форма создания `PipelineRun` на главной странице.
 - Страница `/upload/` для ручной загрузки raw OHLCV CSV, сохранения raw artifact
   и синхронного запуска pipeline.
+- Страница `/binance/` для загрузки OHLCV candles из Binance и синхронного
+  запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
 - `BinanceMarketDataProvider` для загрузки OHLCV candles из Binance Spot REST API
@@ -68,11 +70,12 @@ media/ = большие файлы datasets, models, reports
 
 ## Что еще не работает
 
-- Binance provider пока не подключен к UI.
 - Форма на главной странице создает только metadata-запись `PipelineRun`.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- Главная форма не запускает полный pipeline; для ручного запуска используйте `/upload/`.
-- Нет async/background queue: CSV upload запускает pipeline синхронно.
+- Главная форма не запускает полный pipeline; для ручного запуска используйте
+  `/binance/` или `/upload/`.
+- Нет async/background queue: CSV upload и Binance page запускают pipeline
+  синхронно.
 
 ## Окружение
 
@@ -227,6 +230,35 @@ timestamp, open, high, low, close, volume, symbol
 `/runs/<id>/`, а `PipelineRun.status` становится `Failed` и ошибка записывается
 в `PipelineRun.error_message`. Если ошибка произошла после сохранения raw CSV,
 raw artifact остается у запуска для воспроизводимости.
+
+## Как запустить pipeline на Binance data из веб-формы
+
+1. Откройте страницу:
+
+```text
+http://127.0.0.1:8000/binance/
+```
+
+2. Заполните параметры:
+
+- `symbol`, по умолчанию `BTCUSDT`;
+- `interval`, по умолчанию `1h`;
+- `start_date`;
+- `end_date`;
+- `target_horizon`, по умолчанию `3`;
+- `train_baseline`;
+- `train_catboost`.
+
+3. Нажмите `Скачать Binance data и запустить pipeline`.
+
+После отправки формы view вызывает `BinancePipelineUseCase`. Этот use case
+скачивает OHLCV через `BinanceMarketDataProvider`, сохраняет raw Binance dataset
+как parquet `DatasetArtifact(type="raw")`, запускает `RunPipelineUseCase` и
+перенаправляет на `/runs/<id>/`.
+
+Если обе модели выключены, форма покажет ошибку и pipeline не запустится. Если
+ошибка произошла после создания run, страница перенаправит на detail page, где
+будет виден статус `Failed` и текст ошибки.
 
 ## Как запустить raw CSV pipeline из CLI
 
@@ -632,11 +664,11 @@ http://127.0.0.1:8000/admin/
 
 ## Current limitations
 
-- Binance provider уже подключен к CLI command `run_binance_pipeline`, но пока
-  не подключен к `/upload/` или Dashboard-форме.
+- Binance provider уже подключен к CLI command `run_binance_pipeline` и странице
+  `/binance/`, но пока не подключен к основной Dashboard-форме.
 - Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная Dashboard-форма остается metadata-only.
-- CSV upload и CLI command запускают pipeline синхронно, без async queue.
+- CSV upload, Binance page и CLI commands запускают pipeline синхронно, без async queue.
 - `CsvPipelineUploadUseCase` подключен к `/upload/` и `run_csv_pipeline`, но не к
   основной Dashboard-форме.

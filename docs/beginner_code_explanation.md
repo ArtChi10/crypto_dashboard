@@ -31,6 +31,7 @@ Django здесь не обучает модель сам. Он дает удо�
 
 - краткий статус;
 - форма создания нового `PipelineRun`;
+- ссылка на запуск Binance pipeline `/binance/`;
 - ссылка на ручную загрузку raw CSV `/upload/`;
 - список последних запусков.
 
@@ -60,10 +61,13 @@ Django здесь не обучает модель сам. Он дает удо�
 Сейчас создание `PipelineRun` через главную Dashboard-форму не запускает полный
 pipeline. Оно только создает metadata-запись со статусом `Created`.
 
-Для ручного запуска pipeline через UI есть отдельная страница `/upload/`: она
-принимает raw OHLCV CSV, создает `PipelineRun`, сохраняет исходный CSV как raw
-`DatasetArtifact`, запускает pipeline через `CsvPipelineUploadUseCase` и
-показывает результат на странице запуска.
+Для ручного запуска pipeline через UI есть отдельные страницы:
+
+- `/binance/` - скачивает raw OHLCV из Binance через `BinancePipelineUseCase`;
+- `/upload/` - принимает raw OHLCV CSV, сохраняет исходный CSV как raw
+  `DatasetArtifact` и запускает pipeline через `CsvPipelineUploadUseCase`.
+
+Обе страницы показывают результат на странице запуска `/runs/<id>/`.
 
 ## Что такое ArtifactRepository
 
@@ -470,6 +474,29 @@ processed и final datasets, models и metrics. Если pipeline падает �
 raw save, raw artifact остается у запуска, run получает статус `failed`, а
 ошибка записывается в `error_message`.
 
+## Что делает Binance pipeline page
+
+Страница `/binance/` - это UI-вход в pipeline без ручного CSV-файла.
+
+Она показывает форму:
+
+- symbol;
+- interval;
+- start_date;
+- end_date;
+- target_horizon;
+- train_baseline;
+- train_catboost.
+
+После отправки формы view передает cleaned form data в `BinancePipelineUseCase`.
+Сам use case скачивает OHLCV через `BinanceMarketDataProvider`, создает
+`PipelineRun`, сохраняет raw Binance dataset как parquet в `media/datasets/raw/`
+и вызывает `RunPipelineUseCase`.
+
+Если обе модели выключены, форма показывает validation error и use case не
+запускается. Если ошибка случилась после создания run, пользователь попадает на
+`/runs/<id>/`, где видны `failed` status и `error_message`.
+
 ## Что делает run_csv_pipeline command
 
 Management command `run_csv_pipeline` - это CLI-вход в тот же сценарий, что и
@@ -582,6 +609,7 @@ raw data
 - Metadata models в Django.
 - Admin для metadata.
 - Dashboard `/`.
+- Binance pipeline page `/binance/`.
 - CSV upload `/upload/`.
 - Runs list `/runs/`.
 - Run detail `/runs/<id>/`.
@@ -604,12 +632,12 @@ raw data
 - Ручной `FullPipelineService`.
 - Ручной `RunPersistenceService`.
 - Ручной `RunPipelineUseCase`.
+- Синхронный запуск pipeline из Binance data через `/binance/`.
 - Синхронный запуск pipeline из raw CSV через `/upload/`.
 - CLI-запуск pipeline из raw CSV через `run_csv_pipeline`.
 - CLI-запуск pipeline из Binance data через `run_binance_pipeline`.
 
 ## Будет позже
 
-- Подключение Binance provider к UI.
 - Async/background queue для долгих запусков.
 - Подключение главной Dashboard-формы к реальному pipeline.
