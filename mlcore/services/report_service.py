@@ -44,3 +44,88 @@ class TargetDistributionReportService:
             raise ValueError(f"Missing required columns: {cls.TARGET_COLUMN}")
 
         return final_df_or_target[cls.TARGET_COLUMN]
+
+
+class MetricsComparisonReportService:
+    METRIC_NAMES = ("accuracy", "precision", "recall", "f1", "roc_auc")
+    MODEL_ORDER = ("baseline", "catboost")
+    MODEL_COLORS = {
+        "baseline": "#175cd3",
+        "catboost": "#17663a",
+    }
+
+    def build(self, metrics_by_model: dict[str, dict[str, Any]], path: str | Path) -> Path:
+        models = self._available_models(metrics_by_model)
+        if not models:
+            raise ValueError("metrics_by_model must contain at least one model.")
+
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        x_positions = list(range(len(self.METRIC_NAMES)))
+        bar_width = 0.72 / len(models)
+        max_value = 1.0
+
+        figure, axis = plt.subplots(figsize=(7.2, 3.8))
+        for model_index, model_name in enumerate(models):
+            values, missing_flags = self._metric_values(metrics_by_model[model_name])
+            max_value = max(max_value, *values)
+            offset = (model_index - (len(models) - 1) / 2) * bar_width
+            bars = axis.bar(
+                [position + offset for position in x_positions],
+                values,
+                width=bar_width,
+                label=model_name,
+                color=self.MODEL_COLORS.get(model_name),
+            )
+            for bar, missing in zip(bars, missing_flags, strict=True):
+                if missing:
+                    axis.text(
+                        bar.get_x() + bar.get_width() / 2,
+                        0.03,
+                        "N/A",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                        rotation=90,
+                    )
+
+        axis.set_title("Model metrics comparison")
+        axis.set_ylabel("score")
+        axis.set_xticks(x_positions, self.METRIC_NAMES)
+        axis.set_ylim(0, max(1.0, max_value * 1.15))
+        axis.grid(axis="y", color="#d9dee7", linewidth=0.8, alpha=0.8)
+        axis.legend()
+        figure.tight_layout()
+        figure.savefig(path, format="png", dpi=120)
+        plt.close(figure)
+
+        return path
+
+    @classmethod
+    def _available_models(cls, metrics_by_model: dict[str, dict[str, Any]]) -> list[str]:
+        ordered_models = [
+            model_name
+            for model_name in cls.MODEL_ORDER
+            if model_name in metrics_by_model and metrics_by_model[model_name] is not None
+        ]
+        extra_models = sorted(
+            model_name
+            for model_name, metrics in metrics_by_model.items()
+            if model_name not in cls.MODEL_ORDER and metrics is not None
+        )
+        return ordered_models + extra_models
+
+    @classmethod
+    def _metric_values(cls, metrics: dict[str, Any]) -> tuple[list[float], list[bool]]:
+        values = []
+        missing_flags = []
+        for metric_name in cls.METRIC_NAMES:
+            value = metrics.get(metric_name)
+            if value is None:
+                values.append(0.0)
+                missing_flags.append(True)
+            else:
+                values.append(float(value))
+                missing_flags.append(False)
+        return values, missing_flags

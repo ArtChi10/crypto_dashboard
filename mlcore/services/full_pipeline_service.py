@@ -17,7 +17,10 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationResult,
     DatasetPreparationService,
 )
-from mlcore.services.report_service import TargetDistributionReportService
+from mlcore.services.report_service import (
+    MetricsComparisonReportService,
+    TargetDistributionReportService,
+)
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class FullPipelineResult:
     baseline_result: BaselineTrainingResult | None
     catboost_result: CatBoostTrainingResult | None
     target_distribution_report_path: Path | None = None
+    metrics_comparison_report_path: Path | None = None
 
 
 class FullPipelineService:
@@ -36,6 +40,7 @@ class FullPipelineService:
         catboost_training_service: CatBoostTrainingService | None = None,
         dataset_repository: DatasetRepository | None = None,
         target_distribution_report_service: TargetDistributionReportService | None = None,
+        metrics_comparison_report_service: MetricsComparisonReportService | None = None,
     ) -> None:
         self.artifact_repository = self._infer_artifact_repository(
             dataset_preparation_service,
@@ -65,6 +70,9 @@ class FullPipelineService:
         )
         self.target_distribution_report_service = (
             target_distribution_report_service or TargetDistributionReportService()
+        )
+        self.metrics_comparison_report_service = (
+            metrics_comparison_report_service or MetricsComparisonReportService()
         )
 
     def run(
@@ -110,12 +118,38 @@ class FullPipelineService:
                 run_id=run_id,
             )
 
+        metrics_comparison_report_path = None
+        metrics_by_model = self._metrics_by_model(baseline_result, catboost_result)
+        if metrics_by_model:
+            metrics_comparison_report_path = self.metrics_comparison_report_service.build(
+                metrics_by_model,
+                self._report_path(
+                    "metrics_plot",
+                    run_id=run_id,
+                    final_path=preparation_result.final_path,
+                    extension="png",
+                ),
+            )
+
         return FullPipelineResult(
             preparation_result=preparation_result,
             baseline_result=baseline_result,
             catboost_result=catboost_result,
             target_distribution_report_path=target_distribution_report_path,
+            metrics_comparison_report_path=metrics_comparison_report_path,
         )
+
+    @staticmethod
+    def _metrics_by_model(
+        baseline_result: BaselineTrainingResult | None,
+        catboost_result: CatBoostTrainingResult | None,
+    ) -> dict[str, dict[str, Any]]:
+        metrics_by_model = {}
+        if baseline_result is not None:
+            metrics_by_model["baseline"] = baseline_result.metrics
+        if catboost_result is not None:
+            metrics_by_model["catboost"] = catboost_result.metrics
+        return metrics_by_model
 
     def _report_path(
         self,

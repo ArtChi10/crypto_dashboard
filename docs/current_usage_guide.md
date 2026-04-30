@@ -54,6 +54,7 @@ media/ = большие файлы datasets, models, reports
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 - `TargetDistributionReportService` для PNG-отчета распределения target.
+- `MetricsComparisonReportService` для PNG-сравнения metrics по моделям.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
 - `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
@@ -407,7 +408,11 @@ metrics. Его задача только сохранить metadata в Django 
 - `ModelArtifact` и `MetricSnapshot` для baseline, если baseline обучался;
 - `ModelArtifact` и `MetricSnapshot` для CatBoost, если CatBoost обучался;
 - `ReportArtifact` для `target_distribution`, если `FullPipelineService` создал
-  PNG-отчет.
+  PNG-отчет;
+- `ReportArtifact` для `metrics_plot`, если был хотя бы один model result.
+
+Если у метрики `roc_auc` значение `None`, metrics comparison report не падает:
+на PNG это место подписывается как `N/A`.
 
 Сервис использует `transaction.atomic()`, чтобы связанные metadata-записи
 создавались одной транзакцией.

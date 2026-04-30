@@ -45,7 +45,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 1)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
 
         processed_artifact = DatasetArtifact.objects.get(
             run=run,
@@ -84,6 +84,11 @@ class RunPersistenceServiceTests(unittest.TestCase):
             report_type=ReportArtifact.ReportType.TARGET_DISTRIBUTION,
         )
         self.assertEqual(report_artifact.file_path, "reports/target_distribution.png")
+        metrics_report_artifact = ReportArtifact.objects.get(
+            run=run,
+            report_type=ReportArtifact.ReportType.METRICS_PLOT,
+        )
+        self.assertEqual(metrics_report_artifact.file_path, "reports/metrics_plot.png")
 
         self.assertEqual(saved.processed_dataset_artifact, processed_artifact)
         self.assertEqual(saved.final_dataset_artifact, final_artifact)
@@ -91,6 +96,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertIsNotNone(saved.catboost_model_artifact)
         self.assertIsNotNone(saved.catboost_metric_snapshot)
         self.assertEqual(saved.target_distribution_report_artifact, report_artifact)
+        self.assertEqual(saved.metrics_comparison_report_artifact, metrics_report_artifact)
 
     def test_save_full_pipeline_result_allows_missing_baseline_result(self):
         run = self._create_run()
@@ -101,7 +107,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 1)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
         self.assertIsNone(saved.baseline_model_artifact)
         self.assertIsNone(saved.baseline_metric_snapshot)
         self.assertEqual(
@@ -118,7 +124,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 1)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
         self.assertIsNone(saved.catboost_model_artifact)
         self.assertIsNone(saved.catboost_metric_snapshot)
         self.assertEqual(
@@ -216,6 +222,9 @@ class RunPersistenceServiceTests(unittest.TestCase):
             target_distribution_report_path=Path(settings.MEDIA_ROOT)
             / "reports"
             / "target_distribution.png",
+            metrics_comparison_report_path=Path(settings.MEDIA_ROOT)
+            / "reports"
+            / "metrics_plot.png",
         )
 
 
