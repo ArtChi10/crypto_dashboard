@@ -63,10 +63,12 @@ media/ = большие файлы datasets, models, reports
 - `RunPipelineUseCase` для orchestration одного `PipelineRun` из Python.
 - `CsvPipelineUploadUseCase` для orchestration ручной CSV-загрузки из UI и CLI.
 - Management command `run_csv_pipeline` для запуска pipeline из CSV через CLI.
+- Management command `run_binance_pipeline` для загрузки Binance OHLCV и запуска
+  pipeline через CLI.
 
 ## Что еще не работает
 
-- Binance provider пока не подключен к UI, CLI command или `PipelineRun`.
+- Binance provider пока не подключен к UI.
 - Форма на главной странице создает только metadata-запись `PipelineRun`.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная форма не запускает полный pipeline; для ручного запуска используйте `/upload/`.
@@ -248,6 +250,33 @@ Management command использует тот же `CsvPipelineUploadUseCase`, 
 `/runs/<id>/`. При ошибке команда завершится через `CommandError`; если
 `PipelineRun` уже был создан, его статус станет `failed`, а ошибка попадет в
 `PipelineRun.error_message`.
+
+## Как запустить pipeline на Binance data из CLI
+
+Management command `run_binance_pipeline` скачивает OHLCV candles через
+`BinanceMarketDataProvider`, создает `PipelineRun`, сохраняет raw Binance dataset
+как parquet `DatasetArtifact(type="raw")`, а затем запускает существующий
+`RunPipelineUseCase`.
+
+Пример:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_binance_pipeline --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3 --skip-catboost
+```
+
+Аргументы:
+
+- `--symbol` - один trading symbol, например `BTCUSDT`;
+- `--interval` - candle interval, по умолчанию `1h`;
+- `--start-date` и `--end-date` - даты в формате `YYYY-MM-DD`;
+- `--target-horizon` - horizon для target, по умолчанию `3`;
+- `--skip-baseline` - не обучать baseline;
+- `--skip-catboost` - не обучать CatBoost.
+
+Если одновременно передать `--skip-baseline` и `--skip-catboost`, команда
+завершится `CommandError` до создания run. При успехе выводятся `run id`,
+`run status` и detail URL вида `/runs/<id>/`. При ошибке после создания run его
+статус станет `failed`, а ошибка попадет в `PipelineRun.error_message`.
 
 ## Как открыть /runs/ и /runs/<id>/
 
@@ -603,8 +632,8 @@ http://127.0.0.1:8000/admin/
 
 ## Current limitations
 
-- Binance provider уже есть, но пока не подключен к `/upload/`,
-  `run_csv_pipeline` или Dashboard-форме.
+- Binance provider уже подключен к CLI command `run_binance_pipeline`, но пока
+  не подключен к `/upload/` или Dashboard-форме.
 - Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
 - Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
 - Главная Dashboard-форма остается metadata-only.

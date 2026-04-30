@@ -493,6 +493,35 @@ CSV input -> CsvPipelineUploadUseCase -> RunPipelineUseCase -> FullPipelineServi
 `--skip-catboost`, CatBoost не обучается. Оба flags одновременно запрещены,
 потому что pipeline должен обучить хотя бы одну модель.
 
+## Что делает run_binance_pipeline command
+
+Management command `run_binance_pipeline` - это CLI-вход в pipeline без ручного
+CSV-файла. Команда вызывает `BinancePipelineUseCase`.
+
+Сценарий такой:
+
+1. Создать `PipelineRun`.
+2. Скачать raw OHLCV candles через `BinanceMarketDataProvider`.
+3. Сохранить raw Binance dataset как parquet в `media/datasets/raw/`.
+4. Создать raw `DatasetArtifact`.
+5. Передать raw `DataFrame` в `RunPipelineUseCase`.
+
+Пример:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_binance_pipeline --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3 --skip-catboost
+```
+
+Команда не дублирует ML-логику. Она только проверяет CLI flags и вызывает use
+case:
+
+```text
+BinanceMarketDataProvider -> BinancePipelineUseCase -> RunPipelineUseCase -> FullPipelineService
+```
+
+Raw Binance artifact выбран в формате parquet, потому что это внутренний dataset,
+а не пользовательский uploaded CSV.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -577,9 +606,10 @@ raw data
 - Ручной `RunPipelineUseCase`.
 - Синхронный запуск pipeline из raw CSV через `/upload/`.
 - CLI-запуск pipeline из raw CSV через `run_csv_pipeline`.
+- CLI-запуск pipeline из Binance data через `run_binance_pipeline`.
 
 ## Будет позже
 
-- Подключение Binance provider к UI/CLI pipeline.
+- Подключение Binance provider к UI.
 - Async/background queue для долгих запусков.
 - Подключение главной Dashboard-формы к реальному pipeline.
