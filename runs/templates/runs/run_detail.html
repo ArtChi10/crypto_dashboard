@@ -211,6 +211,57 @@
         {% endif %}
     </section>
 
+    {% if stability_table %}
+        <section class="section" aria-label="Stability by period">
+            <div class="section-heading-row">
+                <h2>Stability by Period</h2>
+                {% if stability_table.file_url %}
+                    <a class="file-link" href="{{ stability_table.file_url }}">Open full CSV</a>
+                {% endif %}
+            </div>
+            {% if stability_table.preview_unavailable %}
+                <p class="empty-state">
+                    Stability preview unavailable.
+                    {% if stability_table.file_url %}
+                        <a class="file-link" href="{{ stability_table.file_url }}">Open full CSV</a>
+                    {% else %}
+                        <code>{{ stability_table.artifact.file_path }}</code>
+                    {% endif %}
+                </p>
+            {% elif stability_table.rows %}
+                <div class="table-wrap table-wrap--compact">
+                    <table class="table--compact">
+                        <thead>
+                            <tr>
+                                {% for column in stability_table.columns %}
+                                    <th scope="col">{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in stability_table.rows %}
+                                <tr>
+                                    <td>{{ row.model_type }}</td>
+                                    <td>{{ row.period_start }}</td>
+                                    <td>{{ row.period_end }}</td>
+                                    <td>{{ row.rows }}</td>
+                                    <td class="metric-value">{{ row.accuracy }}</td>
+                                    <td class="metric-value">{{ row.f1 }}</td>
+                                    <td class="metric-value">{{ row.roc_auc }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if stability_table.truncated %}
+                    <p class="muted stability-note">Showing first 20 rows. Open the full CSV for all periods.</p>
+                {% endif %}
+            {% else %}
+                <p class="empty-state">Stability table is empty.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
     <section class="section" aria-label="Report artifacts">
         <h2>ReportArtifact</h2>
         {% if report_artifacts %}

@@ -376,7 +376,10 @@ Classification metrics округляются до 4 знаков, а confusion 
 в читаемом виде. PNG-файлы `ReportArtifact` из `media/reports/` дополнительно
 показываются прямо на странице как inline images; ссылка на файл при этом
 остается кликабельной. Non-PNG reports и небезопасные пути отображаются без
-inline image.
+inline image. Если у run есть безопасный `stability_table` CSV внутри
+`media/reports/`, detail page показывает компактный preview первых 20 строк:
+`model_type`, период, rows, `accuracy`, `f1` и `roc_auc`. Полная CSV-ссылка
+остается доступной.
 
 Если artifacts или metrics еще не созданы, соответствующие таблицы будут
 пустыми.

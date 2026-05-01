@@ -1,10 +1,12 @@
 import os
+import tempfile
 import unittest
+from pathlib import Path
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
-from django.test import Client
+from django.test import Client, override_settings
 
 django.setup()
 
@@ -21,9 +23,12 @@ class RunDetailViewTests(unittest.TestCase):
     def setUp(self):
         self.client = Client(HTTP_HOST="localhost")
         self.run_ids = []
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.media_root = Path(self.temp_dir.name)
 
     def tearDown(self):
         PipelineRun.objects.filter(id__in=self.run_ids).delete()
+        self.temp_dir.cleanup()
 
     def test_artifact_links_model_summary_and_metrics_are_readable(self):
         run = self._create_run(status=PipelineRun.Status.SUCCESS)
@@ -127,6 +132,66 @@ class RunDetailViewTests(unittest.TestCase):
         self.assertNotIn('href="/media/../reports/feature_importance.png"', html)
         self.assertNotIn('<img src="/media/../reports/feature_importance.png"', html)
 
+    def test_stability_table_preview_renders_summary_and_truncates_rows(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        self._write_stability_csv(row_count=22)
+        ReportArtifact.objects.create(
+            run=run,
+            report_type="stability_table",
+            file_path="reports/stability.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Stability by Period", html)
+        self.assertIn('href="/media/reports/stability.csv"', html)
+        self.assertIn("model_0", html)
+        self.assertIn("model_19", html)
+        self.assertNotIn("model_20", html)
+        self.assertIn("0.1235", html)
+        self.assertIn("0.6543", html)
+        self.assertIn("0.9877", html)
+        self.assertIn("Showing first 20 rows", html)
+
+    def test_stability_table_preview_missing_file_does_not_crash(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        ReportArtifact.objects.create(
+            run=run,
+            report_type="stability_table",
+            file_path="reports/missing_stability.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Stability by Period", html)
+        self.assertIn("Stability preview unavailable", html)
+        self.assertIn('href="/media/reports/missing_stability.csv"', html)
+
+    def test_stability_table_preview_does_not_read_unsafe_paths(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        self._write_stability_csv(row_count=1)
+        ReportArtifact.objects.create(
+            run=run,
+            report_type="stability_table",
+            file_path="../reports/stability.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Stability preview unavailable", html)
+        self.assertIn("../reports/stability.csv", html)
+        self.assertNotIn('href="/media/../reports/stability.csv"', html)
+        self.assertNotIn("model_0", html)
+
     def test_empty_states_still_render(self):
         run = self._create_run(status=PipelineRun.Status.CREATED)
 
@@ -149,6 +214,31 @@ class RunDetailViewTests(unittest.TestCase):
         )
         self.run_ids.append(run.id)
         return run
+
+    def _write_stability_csv(self, row_count):
+        reports_dir = self.media_root / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        lines = [
+            "model_type,period_start,period_end,rows,positive_rate,accuracy,precision,recall,f1,roc_auc"
+        ]
+        for index in range(row_count):
+            lines.append(
+                ",".join(
+                    [
+                        f"model_{index}",
+                        f"2024-01-{index + 1:02d} 00:00:00",
+                        f"2024-01-{index + 1:02d} 23:00:00",
+                        "24",
+                        "0.5",
+                        "0.123456",
+                        "0.222222",
+                        "0.333333",
+                        "0.654321",
+                        "0.987654",
+                    ]
+                )
+            )
+        (reports_dir / "stability.csv").write_text("\n".join(lines), encoding="utf-8")
 
 
 if __name__ == "__main__":

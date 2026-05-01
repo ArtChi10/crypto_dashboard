@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path, PurePosixPath
 
 from django.conf import settings
@@ -7,6 +8,17 @@ from django.shortcuts import get_object_or_404, render
 from .models import PipelineRun
 
 MEDIA_ARTIFACT_PREFIXES = ("datasets/", "models/", "reports/")
+STABILITY_TABLE_REPORT_TYPE = "stability_table"
+STABILITY_PREVIEW_LIMIT = 20
+STABILITY_PREVIEW_COLUMNS = (
+    "model_type",
+    "period_start",
+    "period_end",
+    "rows",
+    "accuracy",
+    "f1",
+    "roc_auc",
+)
 
 
 def run_list(request):
@@ -29,6 +41,7 @@ def run_detail(request, pk):
     model_artifacts = run.model_artifacts.order_by("model_type", "created_at")
     metric_snapshots = run.metric_snapshots.order_by("model_type", "created_at")
     report_artifacts = run.report_artifacts.order_by("report_type", "created_at")
+    report_presenters = [_report_artifact_presenter(artifact) for artifact in report_artifacts]
 
     return render(
         request,
@@ -40,9 +53,8 @@ def run_detail(request, pk):
                 _model_artifact_presenter(artifact) for artifact in model_artifacts
             ],
             "metric_snapshots": [_metric_snapshot_presenter(metric) for metric in metric_snapshots],
-            "report_artifacts": [
-                _report_artifact_presenter(artifact) for artifact in report_artifacts
-            ],
+            "report_artifacts": report_presenters,
+            "stability_table": _stability_table_preview(report_artifacts),
         },
     )
 
@@ -91,6 +103,61 @@ def _metric_snapshot_presenter(metric):
     }
 
 
+def _stability_table_preview(report_artifacts):
+    stability_artifact = next(
+        (
+            artifact
+            for artifact in report_artifacts
+            if artifact.report_type == STABILITY_TABLE_REPORT_TYPE
+        ),
+        None,
+    )
+    if stability_artifact is None:
+        return None
+
+    preview = {
+        "artifact": stability_artifact,
+        "file_url": _media_url_for_path(stability_artifact.file_path),
+        "columns": list(STABILITY_PREVIEW_COLUMNS),
+        "rows": [],
+        "truncated": False,
+        "preview_unavailable": False,
+    }
+    csv_path = _safe_media_csv_path(stability_artifact.file_path)
+    if csv_path is None:
+        preview["preview_unavailable"] = True
+        return preview
+    if not csv_path.is_file():
+        preview["preview_unavailable"] = True
+        return preview
+
+    try:
+        with csv_path.open(newline="", encoding="utf-8") as csv_file:
+            reader = csv.DictReader(csv_file)
+            for index, row in enumerate(reader):
+                if index >= STABILITY_PREVIEW_LIMIT:
+                    preview["truncated"] = True
+                    break
+                preview["rows"].append(_stability_row_presenter(row))
+    except (OSError, csv.Error, UnicodeDecodeError):
+        preview["rows"] = []
+        preview["preview_unavailable"] = True
+
+    return preview
+
+
+def _stability_row_presenter(row):
+    return {
+        "model_type": row.get("model_type") or "-",
+        "period_start": row.get("period_start") or "-",
+        "period_end": row.get("period_end") or "-",
+        "rows": row.get("rows") or "-",
+        "accuracy": _format_csv_metric(row.get("accuracy")),
+        "f1": _format_csv_metric(row.get("f1")),
+        "roc_auc": _format_csv_metric(row.get("roc_auc")),
+    }
+
+
 def _media_url_for_path(file_path):
     relative_path = _relative_media_path(file_path)
     if relative_path is None:
@@ -99,6 +166,23 @@ def _media_url_for_path(file_path):
         return None
 
     return f"{settings.MEDIA_URL.rstrip('/')}/{relative_path}"
+
+
+def _safe_media_csv_path(file_path):
+    relative_path = _relative_media_path(file_path)
+    if relative_path is None:
+        return None
+    if not relative_path.startswith("reports/"):
+        return None
+    if not relative_path.lower().endswith(".csv"):
+        return None
+
+    path = (Path(settings.MEDIA_ROOT) / relative_path).resolve()
+    try:
+        path.relative_to(Path(settings.MEDIA_ROOT).resolve())
+    except ValueError:
+        return None
+    return path
 
 
 def _report_image_url(file_path, file_url):
@@ -142,6 +226,15 @@ def _format_metric(value):
     if value is None:
         return None
     return f"{float(value):.4f}"
+
+
+def _format_csv_metric(value):
+    if value in (None, "", "None", "nan", "NaN"):
+        return "-"
+    try:
+        return f"{float(value):.4f}"
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def _format_confusion_matrix(matrix):
