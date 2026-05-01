@@ -228,6 +228,28 @@ Test нужен, чтобы честно оценить результат на 
 новые данные -> test
 ```
 
+## Что делает WalkForwardValidationService
+
+`WalkForwardValidationService` нужен для research-проверки временных рядов более
+строгим способом, чем один holdout split.
+
+Он строит несколько последовательных folds:
+
+```text
+fold 1: train старое окно -> test следующее окно
+fold 2: train следующее окно -> test следующее окно
+fold 3: ...
+```
+
+Окна задаются количеством строк: `train_window`, `test_window` и `step`.
+Например, при `train_window=100`, `test_window=20` и `step=20` service сначала
+берет первые 100 строк для train, следующие 20 для test, потом сдвигается на 20
+строк и повторяет.
+
+Важно: service сортирует данные по `timestamp`, не делает random shuffle и
+возвращает copies с reset index. Сейчас он только строит folds. Обучение моделей
+и отчеты по walk-forward validation будут отдельным research-шагом.
+
 ## Что делает Evaluator
 
 `Evaluator` считает качество модели.
@@ -703,6 +725,7 @@ raw data
 - Построение target.
 - Ручной `DatasetPreparationService`.
 - Временной split.
+- Research walk-forward folds без random shuffle.
 - Метрики качества.
 - Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.

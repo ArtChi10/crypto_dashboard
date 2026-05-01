@@ -55,6 +55,8 @@ media/ = большие файлы datasets, models, reports
 - `TargetBuilder` для построения target-колонки.
 - `DatasetPreparationService` для ручной подготовки processed/final datasets из Python.
 - `SplitService` для временного train/valid/test split.
+- `WalkForwardValidationService` для research-разбиения временного ряда на
+  последовательные train/test folds без random shuffle.
 - `Evaluator` для расчета classification metrics.
 - `PeriodStabilityAnalysisService` для research-анализа metrics по временным
   сегментам predictions.
@@ -497,6 +499,22 @@ predictions. Он не обучает модели. На вход нужен `Da
 
 - `stability_table` как CSV в `media/reports/`;
 - `stability_plot` как PNG в `media/reports/`.
+
+## Как вручную проверить WalkForwardValidationService
+
+`WalkForwardValidationService` - это независимый research utility для
+walk-forward folds. Он сортирует строки по `timestamp`, строит train/test окна
+по количеству строк и не обучает модели. По умолчанию `step` равен
+`test_window`.
+
+```powershell
+.crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.walk_forward import WalkForwardValidationService; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=30, freq='h'), 'x':range(30), 'target':[0,1]*15}); folds=WalkForwardValidationService().split(df, train_window=10, test_window=5); print(len(folds)); print([(f.fold_id, len(f.train), len(f.test), f.train['timestamp'].max() < f.test['timestamp'].min()) for f in folds])"
+```
+
+Ожидаемый смысл результата: получится несколько последовательных folds, в
+каждом `train` идет раньше `test`. Этот service пока не интегрирован в
+`FullPipelineService`; обучение и отчеты по walk-forward folds остаются
+следующим research-шагом.
 
 ## Как вручную проверить FullPipelineService
 

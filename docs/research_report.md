@@ -108,8 +108,12 @@ The current validation strategy is a single global time-based holdout split:
 Rows are sorted by `timestamp`, and the split preserves chronological order.
 
 The current split is global by timestamp across the final dataset. Per-symbol
-splits, walk-forward validation, and rolling out-of-sample windows are planned
-research extensions.
+splits and rolling out-of-sample windows are planned research extensions.
+
+`WalkForwardValidationService` is now available as an independent research
+utility for building row-count based walk-forward folds. It creates chronological
+train/test windows without shuffle, but it is not yet integrated into the main
+training pipeline, persistence layer, or reports.
 
 ## 9. Models
 
@@ -142,13 +146,16 @@ The evaluation layer also includes `PeriodStabilityAnalysisService`, which
 analyzes existing test predictions by daily, weekly, or any pandas frequency
 period. It returns per-period rows with class balance and classification metrics.
 
+The evaluation layer also includes `WalkForwardValidationService`, which builds
+sequential walk-forward folds for future rolling validation experiments.
+
 ## 11. Current Reports
 
 The MVP currently creates PNG reports for:
 
 - target distribution;
 - metrics comparison;
-- CatBoost feature importance.
+- CatBoost feature importance;
 - period stability table as CSV;
 - period stability plot as PNG.
 
@@ -162,7 +169,9 @@ Known limitations:
 - short evaluation periods can be misleading;
 - high metrics do not imply trading profitability;
 - no transaction costs, fees, slippage, or execution constraints are modeled;
-- current validation is a single time-based holdout, not walk-forward;
+- the main pipeline still uses a single time-based holdout;
+- walk-forward fold generation exists, but fold-by-fold model training,
+  persistence, and report integration are not implemented yet;
 - period stability is currently based on the single holdout test segment, not on
   rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
@@ -177,7 +186,7 @@ or trading system.
 
 Planned research steps:
 
-- walk-forward validation;
+- integrate `WalkForwardValidationService` with model training and evaluation;
 - stability analysis by symbol and market regime;
 - ablation study for feature groups;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
