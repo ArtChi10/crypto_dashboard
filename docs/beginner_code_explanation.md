@@ -270,8 +270,23 @@ Test нужен, чтобы честно оценить результат на 
 - `roc_auc`.
 
 Если в периоде только один класс или нет `y_proba`, `roc_auc` будет `None`.
-Пока этот service не интегрирован в full pipeline и не создает `ReportArtifact`;
-это отдельный research-инструмент для будущих stability reports.
+В полном pipeline этот анализ уже используется через `PeriodStabilityReportService`:
+сохраняется CSV-таблица `stability_table` и PNG-график `stability_plot`.
+
+## Что делает PeriodStabilityReportService
+
+`PeriodStabilityReportService` берет test predictions нескольких моделей:
+
+- dummy;
+- baseline;
+- CatBoost.
+
+Для каждой модели он вызывает `PeriodStabilityAnalysisService`, объединяет
+результаты в одну таблицу и сохраняет CSV. Дополнительно строится PNG-график
+`accuracy`, `f1` и `roc_auc` по времени.
+
+Это уже интегрировано в `FullPipelineService`: если training services вернули
+test predictions, pipeline создает stability reports в `media/reports/`.
 
 ## Что такое BaselineTrainer
 
@@ -395,10 +410,12 @@ baseline-модели обучает `CatBoostClassifier`.
 6. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
 7. Если есть хотя бы один model result, строит PNG comparison report через
    `MetricsComparisonReportService`.
-8. Если CatBoost вернул feature importances, строит PNG feature importance report
+8. Если есть test predictions, строит CSV/PNG stability reports через
+   `PeriodStabilityReportService`.
+9. Если CatBoost вернул feature importances, строит PNG feature importance report
    через `FeatureImportanceReportService`.
-9. Возвращает общий результат: preparation result, dummy result, baseline result,
-   CatBoost result и paths к report files.
+10. Возвращает общий результат: preparation result, dummy result, baseline result,
+    CatBoost result и paths к report files.
 
 Если все training flags выключены, service сразу выдаст `ValueError`.
 
@@ -428,6 +445,8 @@ metadata.
 - `MetricSnapshot` для CatBoost, если CatBoost запускался;
 - `ReportArtifact` для target distribution PNG;
 - `ReportArtifact` для metrics comparison PNG;
+- `ReportArtifact` для stability table CSV;
+- `ReportArtifact` для stability plot PNG;
 - `ReportArtifact` для CatBoost feature importance PNG.
 
 Если `roc_auc` равен `None`, metrics comparison PNG не падает: это значение
@@ -689,6 +708,7 @@ raw data
 - Ручной `CatBoostTrainingService`.
 - `TargetDistributionReportService`.
 - `MetricsComparisonReportService`.
+- `PeriodStabilityReportService`.
 - `FeatureImportanceReportService`.
 - `BinanceMarketDataProvider`.
 - Ручной `FullPipelineService`.

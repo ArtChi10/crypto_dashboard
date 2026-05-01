@@ -66,7 +66,7 @@ class RunBinancePipelineCommandTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 3)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 4)
 
         raw_artifact = DatasetArtifact.objects.get(
             run=run,

@@ -20,10 +20,14 @@ class RunPersistenceResult:
     target_distribution_report_artifact: Any | None = None
     metrics_comparison_report_artifact: Any | None = None
     feature_importance_report_artifact: Any | None = None
+    stability_table_report_artifact: Any | None = None
+    stability_plot_report_artifact: Any | None = None
 
 
 class RunPersistenceService:
     DUMMY_MODEL_TYPE = "dummy"
+    STABILITY_TABLE_REPORT_TYPE = "stability_table"
+    STABILITY_PLOT_REPORT_TYPE = "stability_plot"
 
     def save_full_pipeline_result(self, run: Any, result: Any) -> RunPersistenceResult:
         from django.db import transaction
@@ -118,6 +122,32 @@ class RunPersistenceService:
                     file_path=self._metadata_path(metrics_comparison_report_path),
                 )
 
+            stability_table_report_artifact = None
+            stability_table_report_path = getattr(
+                result,
+                "stability_table_report_path",
+                None,
+            )
+            if stability_table_report_path is not None:
+                stability_table_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=self.STABILITY_TABLE_REPORT_TYPE,
+                    file_path=self._metadata_path(stability_table_report_path),
+                )
+
+            stability_plot_report_artifact = None
+            stability_plot_report_path = getattr(
+                result,
+                "stability_plot_report_path",
+                None,
+            )
+            if stability_plot_report_path is not None:
+                stability_plot_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=self.STABILITY_PLOT_REPORT_TYPE,
+                    file_path=self._metadata_path(stability_plot_report_path),
+                )
+
             feature_importance_report_artifact = None
             feature_importance_report_path = getattr(
                 result,
@@ -143,6 +173,8 @@ class RunPersistenceService:
             target_distribution_report_artifact=target_distribution_report_artifact,
             metrics_comparison_report_artifact=metrics_comparison_report_artifact,
             feature_importance_report_artifact=feature_importance_report_artifact,
+            stability_table_report_artifact=stability_table_report_artifact,
+            stability_plot_report_artifact=stability_plot_report_artifact,
         )
 
     @classmethod

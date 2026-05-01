@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+import pandas as pd
+
 from mlcore.evaluation import Evaluator
 from mlcore.repositories import ArtifactRepository, ModelRepository
 from mlcore.training import CatBoostTrainer, SplitService
@@ -18,6 +21,7 @@ class CatBoostTrainingResult:
     valid_rows: int
     test_rows: int
     feature_importances: dict[str, float] = field(default_factory=dict)
+    test_predictions: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 class CatBoostTrainingService:
@@ -50,10 +54,11 @@ class CatBoostTrainingService:
             x_valid=valid_df[feature_columns],
             y_valid=valid_df[self.TARGET_COLUMN],
         )
-        metrics = self.evaluator.evaluate_model(
-            model,
-            test_df[feature_columns],
-            test_df[self.TARGET_COLUMN],
+        test_predictions = self._test_predictions(model, test_df, feature_columns)
+        metrics = self.evaluator.evaluate_predictions(
+            test_predictions["y_true"],
+            test_predictions["y_pred"],
+            test_predictions.get("y_proba"),
         )
         model_path = self.artifact_repository.model_path(
             "catboost",
@@ -71,6 +76,7 @@ class CatBoostTrainingService:
             valid_rows=len(valid_df),
             test_rows=len(test_df),
             feature_importances=feature_importances,
+            test_predictions=test_predictions,
         )
 
     @classmethod
@@ -88,3 +94,37 @@ class CatBoostTrainingService:
             feature_name: float(importance)
             for feature_name, importance in zip(feature_columns, importances, strict=False)
         }
+
+    def _test_predictions(
+        self,
+        model: Any,
+        test_df: pd.DataFrame,
+        feature_columns: list[str],
+    ) -> pd.DataFrame:
+        x_test = test_df[feature_columns]
+        y_pred = np.asarray(model.predict(x_test)).ravel()
+        predictions = pd.DataFrame(
+            {
+                "timestamp": test_df["timestamp"].reset_index(drop=True),
+                "y_true": test_df[self.TARGET_COLUMN].reset_index(drop=True),
+                "y_pred": y_pred,
+            }
+        )
+        y_proba = self._positive_class_scores(model, x_test)
+        if y_proba is not None:
+            predictions["y_proba"] = y_proba
+
+        return predictions
+
+    @staticmethod
+    def _positive_class_scores(model: Any, x_test: pd.DataFrame) -> np.ndarray | None:
+        if not hasattr(model, "predict_proba"):
+            return None
+
+        scores = np.asarray(model.predict_proba(x_test))
+        if scores.ndim == 2:
+            if scores.shape[1] < 2:
+                return None
+            return scores[:, 1]
+
+        return scores.ravel()

@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import matplotlib
 import pandas as pd
 
+from mlcore.evaluation.stability import PeriodStabilityAnalysisService
+
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
+
+
+@dataclass(frozen=True)
+class PeriodStabilityReportResult:
+    table_path: Path
+    plot_path: Path | None = None
 
 
 class TargetDistributionReportService:
@@ -129,6 +138,101 @@ class MetricsComparisonReportService:
                 values.append(float(value))
                 missing_flags.append(False)
         return values, missing_flags
+
+
+class PeriodStabilityReportService:
+    PLOT_METRICS = ("accuracy", "f1", "roc_auc")
+
+    def __init__(
+        self,
+        analysis_service: PeriodStabilityAnalysisService | None = None,
+    ) -> None:
+        self.analysis_service = analysis_service or PeriodStabilityAnalysisService()
+
+    def build(
+        self,
+        predictions_by_model: dict[str, pd.DataFrame],
+        path_csv: str | Path,
+        path_png: str | Path | None = None,
+        period: str = "D",
+    ) -> PeriodStabilityReportResult:
+        if not predictions_by_model:
+            raise ValueError("predictions_by_model must contain at least one model.")
+
+        stability_df = self._stability_frame(predictions_by_model, period=period)
+        if stability_df.empty:
+            raise ValueError("stability analysis produced no rows.")
+
+        table_path = Path(path_csv)
+        table_path.parent.mkdir(parents=True, exist_ok=True)
+        stability_df.to_csv(table_path, index=False)
+
+        plot_path = None
+        if path_png is not None:
+            plot_path = Path(path_png)
+            plot_path.parent.mkdir(parents=True, exist_ok=True)
+            self._build_plot(stability_df, plot_path)
+
+        return PeriodStabilityReportResult(table_path=table_path, plot_path=plot_path)
+
+    def _stability_frame(
+        self,
+        predictions_by_model: dict[str, pd.DataFrame],
+        period: str,
+    ) -> pd.DataFrame:
+        frames = []
+        for model_name, predictions in predictions_by_model.items():
+            if predictions is None or predictions.empty:
+                continue
+
+            stability_df = self.analysis_service.analyze_predictions(
+                predictions,
+                period=period,
+            )
+            if stability_df.empty:
+                continue
+
+            stability_df.insert(0, "model_type", model_name)
+            frames.append(stability_df)
+
+        if not frames:
+            return pd.DataFrame()
+
+        return pd.concat(frames, ignore_index=True)
+
+    def _build_plot(self, stability_df: pd.DataFrame, path: Path) -> None:
+        figure, axis = plt.subplots(figsize=(8, 4.2))
+        plotted = False
+        for model_name, model_df in stability_df.groupby("model_type", sort=True):
+            model_df = model_df.sort_values("period_start")
+            x_values = pd.to_datetime(model_df["period_start"])
+            for metric_name in self.PLOT_METRICS:
+                metric_values = pd.to_numeric(model_df[metric_name], errors="coerce")
+                metric_df = pd.DataFrame({"x": x_values, "y": metric_values}).dropna()
+                if metric_df.empty:
+                    continue
+                axis.plot(
+                    metric_df["x"],
+                    metric_df["y"],
+                    marker="o",
+                    linewidth=1.8,
+                    label=f"{model_name} {metric_name}",
+                )
+                plotted = True
+
+        axis.set_title("Period stability")
+        axis.set_xlabel("period")
+        axis.set_ylabel("score")
+        axis.set_ylim(0, 1.05)
+        axis.grid(axis="y", color="#d9dee7", linewidth=0.8, alpha=0.8)
+        if plotted:
+            axis.legend(fontsize=8)
+        else:
+            axis.text(0.5, 0.5, "No plottable metrics", ha="center", va="center")
+        figure.autofmt_xdate()
+        figure.tight_layout()
+        figure.savefig(path, format="png", dpi=120)
+        plt.close(figure)
 
 
 class FeatureImportanceReportService:

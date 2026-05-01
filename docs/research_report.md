@@ -138,11 +138,9 @@ The current evaluator computes:
 If probability scores are unavailable, `roc_auc` is reported as `None`. If
 `y_true` contains only one class, `roc_auc` is also reported as `None`.
 
-The evaluation layer also includes `PeriodStabilityAnalysisService`, which can
-analyze existing predictions by daily, weekly, or any pandas frequency period.
-It returns per-period rows with class balance and classification metrics. This
-is currently a standalone research utility and is not yet integrated into the
-full pipeline reports.
+The evaluation layer also includes `PeriodStabilityAnalysisService`, which
+analyzes existing test predictions by daily, weekly, or any pandas frequency
+period. It returns per-period rows with class balance and classification metrics.
 
 ## 11. Current Reports
 
@@ -151,6 +149,8 @@ The MVP currently creates PNG reports for:
 - target distribution;
 - metrics comparison;
 - CatBoost feature importance.
+- period stability table as CSV;
+- period stability plot as PNG.
 
 The run detail page displays report links and renders safe PNG reports inline.
 
@@ -163,8 +163,8 @@ Known limitations:
 - high metrics do not imply trading profitability;
 - no transaction costs, fees, slippage, or execution constraints are modeled;
 - current validation is a single time-based holdout, not walk-forward;
-- period stability analysis exists as a standalone utility, but it is not yet
-  persisted as a report artifact or integrated into the run detail page;
+- period stability is currently based on the single holdout test segment, not on
+  rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
 - no ablation study yet;
 - no probability calibration analysis yet;
@@ -178,7 +178,6 @@ or trading system.
 Planned research steps:
 
 - walk-forward validation;
-- integrate period stability analysis into saved reports;
 - stability analysis by symbol and market regime;
 - ablation study for feature groups;
 - additional dummy baseline strategies, such as `prior` and `stratified`;

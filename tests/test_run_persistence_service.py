@@ -46,7 +46,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 3)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 3)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 3)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 5)
 
         processed_artifact = DatasetArtifact.objects.get(
             run=run,
@@ -114,6 +114,16 @@ class RunPersistenceServiceTests(unittest.TestCase):
             report_type=ReportArtifact.ReportType.FEATURE_IMPORTANCE,
         )
         self.assertEqual(feature_report_artifact.file_path, "reports/feature_importance.png")
+        stability_table_artifact = ReportArtifact.objects.get(
+            run=run,
+            report_type="stability_table",
+        )
+        self.assertEqual(stability_table_artifact.file_path, "reports/stability_table.csv")
+        stability_plot_artifact = ReportArtifact.objects.get(
+            run=run,
+            report_type="stability_plot",
+        )
+        self.assertEqual(stability_plot_artifact.file_path, "reports/stability_plot.png")
 
         self.assertEqual(saved.processed_dataset_artifact, processed_artifact)
         self.assertEqual(saved.final_dataset_artifact, final_artifact)
@@ -125,6 +135,8 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(saved.target_distribution_report_artifact, report_artifact)
         self.assertEqual(saved.metrics_comparison_report_artifact, metrics_report_artifact)
         self.assertEqual(saved.feature_importance_report_artifact, feature_report_artifact)
+        self.assertEqual(saved.stability_table_report_artifact, stability_table_artifact)
+        self.assertEqual(saved.stability_plot_report_artifact, stability_plot_artifact)
 
     def test_save_full_pipeline_result_allows_missing_baseline_result(self):
         run = self._create_run()
@@ -135,7 +147,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 3)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 5)
         self.assertIsNone(saved.baseline_model_artifact)
         self.assertIsNone(saved.baseline_metric_snapshot)
         self.assertEqual(
@@ -152,7 +164,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
         self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
-        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 4)
         self.assertIsNone(saved.catboost_model_artifact)
         self.assertIsNone(saved.catboost_metric_snapshot)
         self.assertEqual(
@@ -271,6 +283,10 @@ class RunPersistenceServiceTests(unittest.TestCase):
             metrics_comparison_report_path=Path(settings.MEDIA_ROOT)
             / "reports"
             / "metrics_plot.png",
+            stability_table_report_path=Path(settings.MEDIA_ROOT)
+            / "reports"
+            / "stability_table.csv",
+            stability_plot_report_path=Path(settings.MEDIA_ROOT) / "reports" / "stability_plot.png",
             feature_importance_report_path=(
                 Path(settings.MEDIA_ROOT) / "reports" / "feature_importance.png"
                 if catboost_result is not None

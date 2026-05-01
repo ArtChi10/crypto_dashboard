@@ -31,6 +31,11 @@ class DummyTrainingServiceTests(unittest.TestCase):
             set(result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
         )
+        self.assertEqual(
+            set(result.test_predictions),
+            {"timestamp", "y_true", "y_pred", "y_proba"},
+        )
+        self.assertEqual(len(result.test_predictions), result.test_rows)
 
     def test_train_and_evaluate_allows_one_class_train_split(self):
         service = DummyTrainingService(
@@ -43,6 +48,7 @@ class DummyTrainingServiceTests(unittest.TestCase):
 
         self.assertTrue(result.model_path.is_file())
         self.assertEqual(result.metrics["roc_auc"], None)
+        self.assertNotIn("y_proba", result.test_predictions)
 
     def test_missing_target_raises_value_error(self):
         service = DummyTrainingService()

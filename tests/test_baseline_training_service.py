@@ -32,6 +32,11 @@ class BaselineTrainingServiceTests(unittest.TestCase):
             set(result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
         )
+        self.assertEqual(
+            set(result.test_predictions),
+            {"timestamp", "y_true", "y_pred", "y_proba"},
+        )
+        self.assertEqual(len(result.test_predictions), result.test_rows)
 
         loaded = ModelRepository().load(result.model_path)
         self.assertEqual(len(loaded.predict(df[result.feature_columns])), len(df))
@@ -56,6 +61,7 @@ class BaselineTrainingServiceTests(unittest.TestCase):
         self.assertEqual(model_repository.saved_model, trainer.model)
         self.assertEqual(model_repository.saved_path, artifact_repository.path)
         self.assertEqual(result.metrics, {"accuracy": 1.0})
+        self.assertEqual(len(result.test_predictions), 12)
 
     def test_train_and_evaluate_raises_for_missing_target(self):
         service = BaselineTrainingService(
@@ -94,7 +100,7 @@ class RecordingTrainer:
         self.feature_columns = None
         self.train_rows = None
         self.valid_rows = None
-        self.model = object()
+        self.model = RecordingModel()
 
     def get_feature_columns(self, df):
         self.feature_columns = ["feature_1", "feature_2"]
@@ -108,13 +114,23 @@ class RecordingTrainer:
         return self.model
 
 
+class RecordingModel:
+    def predict(self, x_test):
+        return [index % 2 for index in range(len(x_test))]
+
+    def predict_proba(self, x_test):
+        return [[0.8, 0.2] if index % 2 == 0 else [0.2, 0.8] for index in range(len(x_test))]
+
+
 class RecordingEvaluator:
     def __init__(self):
         self.test_rows = None
 
-    def evaluate_model(self, model, x_test, y_test):
-        self.test_rows = len(x_test)
-        self.y_test_rows = len(y_test)
+    def evaluate_predictions(self, y_true, y_pred, y_proba=None):
+        self.test_rows = len(y_true)
+        self.y_test_rows = len(y_true)
+        self.y_pred_rows = len(y_pred)
+        self.y_proba_rows = len(y_proba)
         return {"accuracy": 1.0}
 
 

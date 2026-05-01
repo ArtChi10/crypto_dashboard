@@ -65,6 +65,8 @@ media/ = большие файлы datasets, models, reports
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 - `TargetDistributionReportService` для PNG-отчета распределения target.
 - `MetricsComparisonReportService` для PNG-сравнения metrics по моделям.
+- `PeriodStabilityReportService` для CSV/PNG отчета стабильности metrics по
+  временным периодам test predictions.
 - `FeatureImportanceReportService` для PNG-отчета важности CatBoost-признаков.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
@@ -280,6 +282,7 @@ MVP-пайплайн из веб-интерфейса.
 - создаются `MetricSnapshot` для моделей;
 - создаются PNG reports: target distribution, metrics comparison и CatBoost
   feature importance;
+- создаются period stability reports: CSV table и PNG plot;
 - detail page `/runs/<id>/` показывает artifacts, metrics и inline PNG reports.
 
 Важно: высокие metrics на коротком периоде не доказывают рыночную
@@ -473,9 +476,8 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
 ## Как вручную проверить PeriodStabilityAnalysisService
 
 `PeriodStabilityAnalysisService` - это research utility для уже готовых
-predictions. Он не обучает модели, не пишет файлы и не создает Django artifacts.
-На вход нужен `DataFrame` с колонками `timestamp`, `y_true`, `y_pred` и,
-опционально, `y_proba`.
+predictions. Он не обучает модели. На вход нужен `DataFrame` с колонками
+`timestamp`, `y_true`, `y_pred` и, опционально, `y_proba`.
 
 ```powershell
 .crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.stability import PeriodStabilityAnalysisService; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=48, freq='h'), 'y_true':[0,1]*24, 'y_pred':[0,1,1,1]*12, 'y_proba':[0.1,0.8,0.6,0.7]*12}); result=PeriodStabilityAnalysisService().analyze_predictions(df, period='D'); print(result[['rows','accuracy','f1','roc_auc']].to_dict('records'))"
@@ -484,6 +486,12 @@ predictions. Он не обучает модели, не пишет файлы �
 `period="D"` группирует predictions по дням, `period="W"` - по неделям. Можно
 передать любой pandas frequency string. Если в отдельном периоде только один
 класс `y_true` или нет `y_proba`, `roc_auc` будет `None`.
+
+В полном pipeline этот анализ уже используется через `PeriodStabilityReportService`.
+Он сохраняет:
+
+- `stability_table` как CSV в `media/reports/`;
+- `stability_plot` как PNG в `media/reports/`.
 
 ## Как вручную проверить FullPipelineService
 
@@ -523,6 +531,8 @@ metrics. Его задача только сохранить metadata в Django 
 - `ReportArtifact` для `target_distribution`, если `FullPipelineService` создал
   PNG-отчет;
 - `ReportArtifact` для `metrics_plot`, если был хотя бы один model result;
+- `ReportArtifact` для `stability_table`, если были test predictions;
+- `ReportArtifact` для `stability_plot`, если были test predictions;
 - `ReportArtifact` для `feature_importance`, если CatBoost обучался и вернул
   feature importances.
 

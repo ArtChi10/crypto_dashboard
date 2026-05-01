@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+import pandas as pd
 
 from mlcore.repositories import ArtifactRepository, DatasetRepository, ModelRepository
 from mlcore.services.baseline_training_service import (
@@ -21,6 +24,7 @@ from mlcore.services.dummy_training_service import DummyTrainingResult, DummyTra
 from mlcore.services.report_service import (
     FeatureImportanceReportService,
     MetricsComparisonReportService,
+    PeriodStabilityReportService,
     TargetDistributionReportService,
 )
 
@@ -34,6 +38,8 @@ class FullPipelineResult:
     target_distribution_report_path: Path | None = None
     metrics_comparison_report_path: Path | None = None
     feature_importance_report_path: Path | None = None
+    stability_table_report_path: Path | None = None
+    stability_plot_report_path: Path | None = None
 
 
 class FullPipelineService:
@@ -46,6 +52,7 @@ class FullPipelineService:
         dataset_repository: DatasetRepository | None = None,
         target_distribution_report_service: TargetDistributionReportService | None = None,
         metrics_comparison_report_service: MetricsComparisonReportService | None = None,
+        period_stability_report_service: PeriodStabilityReportService | None = None,
         feature_importance_report_service: FeatureImportanceReportService | None = None,
     ) -> None:
         self.artifact_repository = self._infer_artifact_repository(
@@ -85,6 +92,9 @@ class FullPipelineService:
         )
         self.metrics_comparison_report_service = (
             metrics_comparison_report_service or MetricsComparisonReportService()
+        )
+        self.period_stability_report_service = (
+            period_stability_report_service or PeriodStabilityReportService()
         )
         self.feature_importance_report_service = (
             feature_importance_report_service or FeatureImportanceReportService()
@@ -154,6 +164,32 @@ class FullPipelineService:
                 ),
             )
 
+        stability_table_report_path = None
+        stability_plot_report_path = None
+        predictions_by_model = self._predictions_by_model(
+            dummy_result,
+            baseline_result,
+            catboost_result,
+        )
+        if predictions_by_model:
+            stability_report = self.period_stability_report_service.build(
+                predictions_by_model,
+                self._report_path(
+                    "stability_table",
+                    run_id=run_id,
+                    final_path=preparation_result.final_path,
+                    extension="csv",
+                ),
+                self._report_path(
+                    "stability_plot",
+                    run_id=run_id,
+                    final_path=preparation_result.final_path,
+                    extension="png",
+                ),
+            )
+            stability_table_report_path = stability_report.table_path
+            stability_plot_report_path = stability_report.plot_path
+
         feature_importance_report_path = None
         if catboost_result is not None and catboost_result.feature_importances:
             feature_importance_report_path = self.feature_importance_report_service.build(
@@ -175,6 +211,8 @@ class FullPipelineService:
             target_distribution_report_path=target_distribution_report_path,
             metrics_comparison_report_path=metrics_comparison_report_path,
             feature_importance_report_path=feature_importance_report_path,
+            stability_table_report_path=stability_table_report_path,
+            stability_plot_report_path=stability_plot_report_path,
         )
 
     @staticmethod
@@ -192,6 +230,21 @@ class FullPipelineService:
             metrics_by_model["catboost"] = catboost_result.metrics
         return metrics_by_model
 
+    @staticmethod
+    def _predictions_by_model(
+        dummy_result: DummyTrainingResult | None,
+        baseline_result: BaselineTrainingResult | None,
+        catboost_result: CatBoostTrainingResult | None,
+    ) -> dict[str, pd.DataFrame]:
+        predictions_by_model = {}
+        if dummy_result is not None and not dummy_result.test_predictions.empty:
+            predictions_by_model["dummy"] = dummy_result.test_predictions
+        if baseline_result is not None and not baseline_result.test_predictions.empty:
+            predictions_by_model["baseline"] = baseline_result.test_predictions
+        if catboost_result is not None and not catboost_result.test_predictions.empty:
+            predictions_by_model["catboost"] = catboost_result.test_predictions
+        return predictions_by_model
+
     def _report_path(
         self,
         report_type: str,
@@ -202,7 +255,16 @@ class FullPipelineService:
         artifact_repository = self.artifact_repository
         if artifact_repository is None:
             artifact_repository = ArtifactRepository(self._base_dir_from_final_path(final_path))
-        return artifact_repository.report_path(report_type, run_id=run_id, extension=extension)
+        try:
+            return artifact_repository.report_path(report_type, run_id=run_id, extension=extension)
+        except ValueError:
+            if report_type not in {"stability_table", "stability_plot"}:
+                raise
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            directory = artifact_repository.base_dir / "reports"
+            directory.mkdir(parents=True, exist_ok=True)
+            return directory / f"{report_type}_run_{run_id}_{timestamp}.{extension}"
 
     @staticmethod
     def _base_dir_from_final_path(final_path: Path) -> Path:

@@ -44,6 +44,9 @@ class FullPipelineServiceTests(unittest.TestCase):
         self.assertEqual(result.dummy_result.model_path.suffix, ".joblib")
         self.assertEqual(result.baseline_result.model_path.suffix, ".joblib")
         self.assertEqual(result.catboost_result.model_path.suffix, ".cbm")
+        self.assertFalse(result.dummy_result.test_predictions.empty)
+        self.assertFalse(result.baseline_result.test_predictions.empty)
+        self.assertFalse(result.catboost_result.test_predictions.empty)
         self.assertEqual(
             set(result.dummy_result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
@@ -56,6 +59,10 @@ class FullPipelineServiceTests(unittest.TestCase):
             set(result.catboost_result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
         )
+        self.assertIsNotNone(result.stability_table_report_path)
+        self.assertIsNotNone(result.stability_plot_report_path)
+        self.assertTrue(result.stability_table_report_path.is_file())
+        self.assertTrue(result.stability_plot_report_path.is_file())
 
     def test_run_can_disable_baseline(self):
         service = self._make_service()
