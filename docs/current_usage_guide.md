@@ -14,6 +14,8 @@ Dashboard и Runs, создавать запись `PipelineRun` через UI, 
 CSV через `/upload/`, хранить ссылки на dataset/model/report artifacts и
 запускать отдельные ML-компоненты из Python.
 
+Research report skeleton: [`docs/research_report.md`](research_report.md).
+
 Главное правило хранения:
 
 ```text

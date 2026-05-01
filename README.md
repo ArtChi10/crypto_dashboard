@@ -18,9 +18,9 @@ artifacts, metrics, and reports.
   feature importance PNG reports.
 - Run detail page: implemented with artifact links, metric summaries, and inline
   PNG report display.
-- Research layer: planned / not implemented yet. Walk-forward validation,
-  stability analysis, ablation study, and final research report are still future
-  work.
+- Research layer: started with a report skeleton. Walk-forward validation,
+  stability analysis, ablation study, and stronger out-of-sample analysis are
+  still future work.
 
 ## Caution
 
@@ -42,3 +42,4 @@ review before drawing conclusions.
 
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
+- [Research report skeleton](docs/research_report.md)
