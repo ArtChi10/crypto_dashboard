@@ -54,6 +54,8 @@ media/ = большие файлы datasets, models, reports
 - `DatasetPreparationService` для ручной подготовки processed/final datasets из Python.
 - `SplitService` для временного train/valid/test split.
 - `Evaluator` для расчета classification metrics.
+- `PeriodStabilityAnalysisService` для research-анализа metrics по временным
+  сегментам predictions.
 - `BaselineTrainer` на базе `LogisticRegression`.
 - `DummyBaselineTrainer` на базе `DummyClassifier` как naive baseline.
 - `CatBoostTrainer`.
@@ -467,6 +469,21 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
   `confusion_matrix`;
 - `features` показывает numeric feature columns, которые использовала модель;
 - `rows` показывает размеры train, valid и test частей.
+
+## Как вручную проверить PeriodStabilityAnalysisService
+
+`PeriodStabilityAnalysisService` - это research utility для уже готовых
+predictions. Он не обучает модели, не пишет файлы и не создает Django artifacts.
+На вход нужен `DataFrame` с колонками `timestamp`, `y_true`, `y_pred` и,
+опционально, `y_proba`.
+
+```powershell
+.crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.stability import PeriodStabilityAnalysisService; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=48, freq='h'), 'y_true':[0,1]*24, 'y_pred':[0,1,1,1]*12, 'y_proba':[0.1,0.8,0.6,0.7]*12}); result=PeriodStabilityAnalysisService().analyze_predictions(df, period='D'); print(result[['rows','accuracy','f1','roc_auc']].to_dict('records'))"
+```
+
+`period="D"` группирует predictions по дням, `period="W"` - по неделям. Можно
+передать любой pandas frequency string. Если в отдельном периоде только один
+класс `y_true` или нет `y_proba`, `roc_auc` будет `None`.
 
 ## Как вручную проверить FullPipelineService
 

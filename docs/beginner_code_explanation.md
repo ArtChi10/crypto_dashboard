@@ -240,6 +240,39 @@ Test нужен, чтобы честно оценить результат на 
 посчитать `roc_auc`. Если вероятностей нет или в ответах только один класс,
 `roc_auc` будет `None`.
 
+## Что делает PeriodStabilityAnalysisService
+
+`PeriodStabilityAnalysisService` помогает понять, насколько metrics стабильны
+во времени.
+
+Он не обучает модель и не запускает pipeline. Вместо этого он берет уже готовую
+таблицу predictions:
+
+- `timestamp`;
+- `y_true`;
+- `y_pred`;
+- `y_proba`, если есть.
+
+Потом service группирует строки по периоду, например по дням (`period="D"`) или
+неделям (`period="W"`), и для каждого периода снова вызывает `Evaluator`.
+
+На выходе получается pandas `DataFrame`, где каждая строка - отдельный временной
+сегмент:
+
+- `period_start`;
+- `period_end`;
+- `rows`;
+- `positive_rate`;
+- `accuracy`;
+- `precision`;
+- `recall`;
+- `f1`;
+- `roc_auc`.
+
+Если в периоде только один класс или нет `y_proba`, `roc_auc` будет `None`.
+Пока этот service не интегрирован в full pipeline и не создает `ReportArtifact`;
+это отдельный research-инструмент для будущих stability reports.
+
 ## Что такое BaselineTrainer
 
 `BaselineTrainer` обучает простую базовую модель.
@@ -647,6 +680,7 @@ raw data
 - Ручной `DatasetPreparationService`.
 - Временной split.
 - Метрики качества.
+- Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.
 - Baseline trainer.
 - CatBoost trainer.

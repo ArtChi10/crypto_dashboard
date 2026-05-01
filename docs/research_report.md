@@ -138,6 +138,12 @@ The current evaluator computes:
 If probability scores are unavailable, `roc_auc` is reported as `None`. If
 `y_true` contains only one class, `roc_auc` is also reported as `None`.
 
+The evaluation layer also includes `PeriodStabilityAnalysisService`, which can
+analyze existing predictions by daily, weekly, or any pandas frequency period.
+It returns per-period rows with class balance and classification metrics. This
+is currently a standalone research utility and is not yet integrated into the
+full pipeline reports.
+
 ## 11. Current Reports
 
 The MVP currently creates PNG reports for:
@@ -157,7 +163,9 @@ Known limitations:
 - high metrics do not imply trading profitability;
 - no transaction costs, fees, slippage, or execution constraints are modeled;
 - current validation is a single time-based holdout, not walk-forward;
-- no stability analysis by symbol, period, regime, or market condition yet;
+- period stability analysis exists as a standalone utility, but it is not yet
+  persisted as a report artifact or integrated into the run detail page;
+- no stability analysis by symbol, regime, or market condition yet;
 - no ablation study yet;
 - no probability calibration analysis yet;
 - no out-of-sample degradation analysis yet.
@@ -170,7 +178,8 @@ or trading system.
 Planned research steps:
 
 - walk-forward validation;
-- stability analysis by symbol and time period;
+- integrate period stability analysis into saved reports;
+- stability analysis by symbol and market regime;
 - ablation study for feature groups;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
 - probability calibration;
