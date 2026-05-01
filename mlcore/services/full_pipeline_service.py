@@ -17,6 +17,7 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationResult,
     DatasetPreparationService,
 )
+from mlcore.services.dummy_training_service import DummyTrainingResult, DummyTrainingService
 from mlcore.services.report_service import (
     FeatureImportanceReportService,
     MetricsComparisonReportService,
@@ -29,6 +30,7 @@ class FullPipelineResult:
     preparation_result: DatasetPreparationResult
     baseline_result: BaselineTrainingResult | None
     catboost_result: CatBoostTrainingResult | None
+    dummy_result: DummyTrainingResult | None = None
     target_distribution_report_path: Path | None = None
     metrics_comparison_report_path: Path | None = None
     feature_importance_report_path: Path | None = None
@@ -38,6 +40,7 @@ class FullPipelineService:
     def __init__(
         self,
         dataset_preparation_service: DatasetPreparationService | None = None,
+        dummy_training_service: DummyTrainingService | None = None,
         baseline_training_service: BaselineTrainingService | None = None,
         catboost_training_service: CatBoostTrainingService | None = None,
         dataset_repository: DatasetRepository | None = None,
@@ -47,10 +50,12 @@ class FullPipelineService:
     ) -> None:
         self.artifact_repository = self._infer_artifact_repository(
             dataset_preparation_service,
+            dummy_training_service,
             baseline_training_service,
             catboost_training_service,
-        )
+        ) or ArtifactRepository(Path("media"))
         model_repository = self._infer_model_repository(
+            dummy_training_service,
             baseline_training_service,
             catboost_training_service,
         )
@@ -62,6 +67,10 @@ class FullPipelineService:
         self.dataset_preparation_service = dataset_preparation_service or DatasetPreparationService(
             artifact_repository=self.artifact_repository,
             dataset_repository=self.dataset_repository,
+        )
+        self.dummy_training_service = dummy_training_service or DummyTrainingService(
+            artifact_repository=self.artifact_repository,
+            model_repository=model_repository,
         )
         self.baseline_training_service = baseline_training_service or BaselineTrainingService(
             artifact_repository=self.artifact_repository,
@@ -87,10 +96,11 @@ class FullPipelineService:
         run_id: int,
         horizon: int = 3,
         symbol: str | None = None,
+        train_dummy: bool = True,
         train_baseline: bool = True,
         train_catboost: bool = True,
     ) -> FullPipelineResult:
-        if not train_baseline and not train_catboost:
+        if not train_dummy and not train_baseline and not train_catboost:
             raise ValueError("At least one training flag must be True.")
 
         preparation_result = self.dataset_preparation_service.prepare(
@@ -110,6 +120,13 @@ class FullPipelineService:
             ),
         )
 
+        dummy_result = None
+        if train_dummy:
+            dummy_result = self.dummy_training_service.train_and_evaluate(
+                final_df,
+                run_id=run_id,
+            )
+
         baseline_result = None
         if train_baseline:
             baseline_result = self.baseline_training_service.train_and_evaluate(
@@ -125,7 +142,7 @@ class FullPipelineService:
             )
 
         metrics_comparison_report_path = None
-        metrics_by_model = self._metrics_by_model(baseline_result, catboost_result)
+        metrics_by_model = self._metrics_by_model(dummy_result, baseline_result, catboost_result)
         if metrics_by_model:
             metrics_comparison_report_path = self.metrics_comparison_report_service.build(
                 metrics_by_model,
@@ -154,6 +171,7 @@ class FullPipelineService:
             preparation_result=preparation_result,
             baseline_result=baseline_result,
             catboost_result=catboost_result,
+            dummy_result=dummy_result,
             target_distribution_report_path=target_distribution_report_path,
             metrics_comparison_report_path=metrics_comparison_report_path,
             feature_importance_report_path=feature_importance_report_path,
@@ -161,10 +179,13 @@ class FullPipelineService:
 
     @staticmethod
     def _metrics_by_model(
+        dummy_result: DummyTrainingResult | None,
         baseline_result: BaselineTrainingResult | None,
         catboost_result: CatBoostTrainingResult | None,
     ) -> dict[str, dict[str, Any]]:
         metrics_by_model = {}
+        if dummy_result is not None:
+            metrics_by_model["dummy"] = dummy_result.metrics
         if baseline_result is not None:
             metrics_by_model["baseline"] = baseline_result.metrics
         if catboost_result is not None:

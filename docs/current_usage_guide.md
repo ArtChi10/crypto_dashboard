@@ -55,8 +55,10 @@ media/ = большие файлы datasets, models, reports
 - `SplitService` для временного train/valid/test split.
 - `Evaluator` для расчета classification metrics.
 - `BaselineTrainer` на базе `LogisticRegression`.
+- `DummyBaselineTrainer` на базе `DummyClassifier` как naive baseline.
 - `CatBoostTrainer`.
 - `ModelRepository` для сохранения и загрузки `.joblib`, `.pkl`, `.cbm`.
+- `DummyTrainingService` для обучения и оценки naive baseline.
 - `BaselineTrainingService` для ручного обучения baseline-модели из Python.
 - `CatBoostTrainingService` для ручного обучения CatBoost-модели из Python.
 - `TargetDistributionReportService` для PNG-отчета распределения target.
@@ -272,7 +274,7 @@ MVP-пайплайн из веб-интерфейса.
 - `/binance/` открывается и показывает Binance form;
 - форма Binance запускает real network pipeline через Binance Spot REST API;
 - создаются raw, processed и final datasets;
-- создаются baseline и CatBoost model artifacts;
+- создаются dummy, baseline и CatBoost model artifacts;
 - создаются `MetricSnapshot` для моделей;
 - создаются PNG reports: target distribution, metrics comparison и CatBoost
   feature importance;
@@ -473,18 +475,22 @@ model artifact в `tmp_artifacts/manual_baseline_check/models/`.
 моделей. Он не пишет metadata в SQLite и не создает Django artifacts.
 
 Для synthetic данных важно, чтобы после `TargetBuilder` получались оба класса
-`target`, иначе trainers честно откажутся обучаться на одном классе.
+`target`, иначе LogisticRegression и CatBoost честно откажутся обучаться на
+одном классе. Dummy baseline one-class train split разрешает, потому что это
+наивная контрольная точка.
 
 ```powershell
-.crypto\Scripts\python.exe -c "from pathlib import Path; import pandas as pd; from mlcore.repositories import ArtifactRepository; from mlcore.services import CatBoostTrainingService, FullPipelineService; from mlcore.training import CatBoostTrainer; close = [1, 3, 2, 4] * 25; df = pd.DataFrame({'timestamp': pd.date_range('2024-01-01', periods=100, freq='h'), 'open': close, 'high': [x + 1 for x in close], 'low': [x - 1 for x in close], 'close': close, 'volume': range(100, 200), 'symbol': ['BTCUSDT'] * 100}); artifact_repo = ArtifactRepository(Path('tmp_artifacts/manual_full_pipeline_check')); service = FullPipelineService(catboost_training_service=CatBoostTrainingService(artifact_repository=artifact_repo, trainer=CatBoostTrainer(iterations=5, verbose=False))); result = service.run(df, run_id=1, horizon=3, symbol='BTCUSDT'); print('final_path=', result.preparation_result.final_path); print('baseline=', result.baseline_result is not None); print('catboost=', result.catboost_result is not None); print('baseline_metrics=', result.baseline_result.metrics); print('catboost_metrics=', result.catboost_result.metrics)"
+.crypto\Scripts\python.exe -c "from pathlib import Path; import pandas as pd; from mlcore.repositories import ArtifactRepository; from mlcore.services import CatBoostTrainingService, FullPipelineService; from mlcore.training import CatBoostTrainer; close = [1, 3, 2, 4] * 25; df = pd.DataFrame({'timestamp': pd.date_range('2024-01-01', periods=100, freq='h'), 'open': close, 'high': [x + 1 for x in close], 'low': [x - 1 for x in close], 'close': close, 'volume': range(100, 200), 'symbol': ['BTCUSDT'] * 100}); artifact_repo = ArtifactRepository(Path('tmp_artifacts/manual_full_pipeline_check')); service = FullPipelineService(catboost_training_service=CatBoostTrainingService(artifact_repository=artifact_repo, trainer=CatBoostTrainer(iterations=5, verbose=False))); result = service.run(df, run_id=1, horizon=3, symbol='BTCUSDT'); print('final_path=', result.preparation_result.final_path); print('dummy=', result.dummy_result is not None); print('baseline=', result.baseline_result is not None); print('catboost=', result.catboost_result is not None); print('dummy_metrics=', result.dummy_result.metrics); print('baseline_metrics=', result.baseline_result.metrics); print('catboost_metrics=', result.catboost_result.metrics)"
 ```
 
 Ожидаемый смысл результата:
 
 - `final_path` показывает путь к сохраненному final parquet dataset;
+- `dummy=True` означает, что наивный baseline обучился и сохранился;
 - `baseline=True` означает, что baseline-модель обучилась и сохранилась;
 - `catboost=True` означает, что CatBoost-модель обучилась и сохранилась;
-- `baseline_metrics` и `catboost_metrics` содержат classification metrics.
+- `dummy_metrics`, `baseline_metrics` и `catboost_metrics` содержат classification
+  metrics.
 
 ## Как сохранять metadata результата pipeline
 
@@ -494,6 +500,7 @@ metrics. Его задача только сохранить metadata в Django 
 
 - `DatasetArtifact` для processed dataset;
 - `DatasetArtifact` для final dataset;
+- `ModelArtifact` и `MetricSnapshot` для dummy baseline, если dummy обучался;
 - `ModelArtifact` и `MetricSnapshot` для baseline, если baseline обучался;
 - `ModelArtifact` и `MetricSnapshot` для CatBoost, если CatBoost обучался;
 - `ReportArtifact` для `target_distribution`, если `FullPipelineService` создал

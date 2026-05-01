@@ -15,7 +15,13 @@ from django.core.management.base import CommandError
 
 django.setup()
 
-from runs.models import DatasetArtifact, MetricSnapshot, ModelArtifact, PipelineRun  # noqa: E402
+from runs.models import (  # noqa: E402
+    DatasetArtifact,
+    MetricSnapshot,
+    ModelArtifact,
+    PipelineRun,
+    ReportArtifact,
+)
 
 
 class RunCsvPipelineCommandTests(unittest.TestCase):
@@ -58,8 +64,8 @@ class RunCsvPipelineCommandTests(unittest.TestCase):
         self.assertEqual(run.interval, "1h")
         self.assertEqual(run.target_horizon, 3)
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 3)
-        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
-        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
+        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
 
         raw_artifact = DatasetArtifact.objects.get(
             run=run,
@@ -166,13 +172,19 @@ class RunCsvPipelineCommandTests(unittest.TestCase):
                 flat=True,
             )
         )
+        file_paths.extend(
+            ReportArtifact.objects.filter(run_id__in=self.run_ids).values_list(
+                "file_path",
+                flat=True,
+            )
+        )
 
         for file_path in file_paths:
             path = Path(file_path)
-            if not path.is_absolute():
-                path = Path(settings.MEDIA_ROOT) / path
-            if path.exists():
-                path.unlink()
+            paths = [path] if path.is_absolute() else [path, Path(settings.MEDIA_ROOT) / path]
+            for candidate in paths:
+                if candidate.exists():
+                    candidate.unlink()
 
 
 class FailingUploadUseCase:

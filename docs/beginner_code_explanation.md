@@ -249,14 +249,26 @@ Test нужен, чтобы честно оценить результат на 
 - `StandardScaler`;
 - `LogisticRegression`.
 
-Baseline нужен как первая точка сравнения. Если потом появится сложная модель,
-например CatBoost service, ее можно будет сравнить с baseline.
+Baseline нужен как сильнее устроенная первая точка сравнения. CatBoost можно
+сравнивать с этим baseline и с совсем наивным dummy baseline.
 
 `BaselineTrainer` берет только numeric feature columns и не использует:
 
 - `target`;
 - `timestamp`;
 - `symbol`.
+
+## Что такое DummyBaselineTrainer
+
+`DummyBaselineTrainer` обучает `sklearn.dummy.DummyClassifier`.
+
+По умолчанию используется `strategy="most_frequent"`: модель всегда предсказывает
+самый частый класс из train split. Это не попытка найти рыночный сигнал, а
+наивная research-точка сравнения.
+
+В отличие от LogisticRegression и CatBoost, dummy baseline разрешает one-class
+`y_train`. Это сделано специально: наивный baseline должен показывать, что
+получится даже в вырожденном случае.
 
 ## Что такое CatBoostTrainer
 
@@ -303,6 +315,17 @@ CatBoost `.cbm` сохраняется через native метод CatBoost `sa
 Сам по себе service не подключен к Dashboard-форме напрямую. В UI его вызывает
 общий `RunPipelineUseCase` на странице `/upload/`.
 
+## Что делает DummyTrainingService
+
+`DummyTrainingService` похож на `BaselineTrainingService`, но обучает
+`DummyBaselineTrainer`.
+
+Он делает time-based split, обучает naive baseline, считает metrics через
+`Evaluator`, сохраняет модель как `.joblib` и возвращает размеры split.
+
+В полном pipeline dummy baseline включен по умолчанию, чтобы metrics comparison
+всегда содержал тривиальную точку сравнения.
+
 ## Что делает CatBoostTrainingService
 
 `CatBoostTrainingService` похож на `BaselineTrainingService`, но вместо
@@ -334,16 +357,17 @@ baseline-модели обучает `CatBoostClassifier`.
 1. Запускает `DatasetPreparationService`.
 2. Загружает final parquet dataset через `DatasetRepository`.
 3. Строит PNG report распределения `target` через `TargetDistributionReportService`.
-4. Если включен `train_baseline`, запускает `BaselineTrainingService`.
-5. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
-6. Если есть хотя бы один model result, строит PNG comparison report через
+4. Если включен `train_dummy`, запускает `DummyTrainingService`.
+5. Если включен `train_baseline`, запускает `BaselineTrainingService`.
+6. Если включен `train_catboost`, запускает `CatBoostTrainingService`.
+7. Если есть хотя бы один model result, строит PNG comparison report через
    `MetricsComparisonReportService`.
-7. Если CatBoost вернул feature importances, строит PNG feature importance report
+8. Если CatBoost вернул feature importances, строит PNG feature importance report
    через `FeatureImportanceReportService`.
-8. Возвращает общий результат: preparation result, baseline result, CatBoost
-   result и paths к report files.
+9. Возвращает общий результат: preparation result, dummy result, baseline result,
+   CatBoost result и paths к report files.
 
-Если обе training-галочки выключены, service сразу выдаст `ValueError`.
+Если все training flags выключены, service сразу выдаст `ValueError`.
 
 Важно: это еще не Django runner. Он не пишет `PipelineRun`, `DatasetArtifact`,
 `MetricSnapshot` или `ModelArtifact` в SQLite. Он только связывает уже готовые
@@ -363,6 +387,8 @@ metadata.
 
 - `DatasetArtifact` для processed dataset;
 - `DatasetArtifact` для final dataset;
+- `ModelArtifact` для dummy baseline, если dummy запускался;
+- `MetricSnapshot` для dummy baseline, если dummy запускался;
 - `ModelArtifact` для baseline, если baseline запускался;
 - `MetricSnapshot` для baseline, если baseline запускался;
 - `ModelArtifact` для CatBoost, если CatBoost запускался;
@@ -621,8 +647,10 @@ raw data
 - Ручной `DatasetPreparationService`.
 - Временной split.
 - Метрики качества.
+- Dummy baseline trainer.
 - Baseline trainer.
 - CatBoost trainer.
+- Ручной `DummyTrainingService`.
 - Ручной `BaselineTrainingService`.
 - Ручной `CatBoostTrainingService`.
 - `TargetDistributionReportService`.

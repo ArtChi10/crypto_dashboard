@@ -12,6 +12,7 @@ from mlcore.services import (
     DatasetPreparationResult,
     FullPipelineService,
 )
+from mlcore.services.dummy_training_service import DummyTrainingResult
 from mlcore.training import CatBoostTrainer
 
 
@@ -34,12 +35,19 @@ class FullPipelineServiceTests(unittest.TestCase):
 
         self.assertTrue(result.preparation_result.processed_path.is_file())
         self.assertTrue(result.preparation_result.final_path.is_file())
+        self.assertIsNotNone(result.dummy_result)
         self.assertIsNotNone(result.baseline_result)
         self.assertIsNotNone(result.catboost_result)
+        self.assertTrue(result.dummy_result.model_path.is_file())
         self.assertTrue(result.baseline_result.model_path.is_file())
         self.assertTrue(result.catboost_result.model_path.is_file())
+        self.assertEqual(result.dummy_result.model_path.suffix, ".joblib")
         self.assertEqual(result.baseline_result.model_path.suffix, ".joblib")
         self.assertEqual(result.catboost_result.model_path.suffix, ".cbm")
+        self.assertEqual(
+            set(result.dummy_result.metrics),
+            {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
+        )
         self.assertEqual(
             set(result.baseline_result.metrics),
             {"accuracy", "precision", "recall", "f1", "roc_auc", "confusion_matrix"},
@@ -62,6 +70,7 @@ class FullPipelineServiceTests(unittest.TestCase):
         )
 
         self.assertIsNone(result.baseline_result)
+        self.assertIsNotNone(result.dummy_result)
         self.assertIsNotNone(result.catboost_result)
 
     def test_run_can_disable_catboost(self):
@@ -76,6 +85,7 @@ class FullPipelineServiceTests(unittest.TestCase):
             train_catboost=False,
         )
 
+        self.assertIsNotNone(result.dummy_result)
         self.assertIsNotNone(result.baseline_result)
         self.assertIsNone(result.catboost_result)
 
@@ -87,6 +97,7 @@ class FullPipelineServiceTests(unittest.TestCase):
             service.run(
                 self._make_raw_frame(),
                 run_id=1,
+                train_dummy=False,
                 train_baseline=False,
                 train_catboost=False,
             )
@@ -108,6 +119,16 @@ class FullPipelineServiceTests(unittest.TestCase):
                 test_rows=1,
             )
         )
+        dummy_service = RecordingTrainingService(
+            DummyTrainingResult(
+                model_path=self.base_dir / "dummy.joblib",
+                metrics={"accuracy": 1.0},
+                feature_columns=["feature_1"],
+                train_rows=1,
+                valid_rows=0,
+                test_rows=1,
+            )
+        )
         catboost_service = RecordingTrainingService(
             CatBoostTrainingResult(
                 model_path=self.base_dir / "catboost.cbm",
@@ -120,6 +141,7 @@ class FullPipelineServiceTests(unittest.TestCase):
         )
         service = FullPipelineService(
             dataset_preparation_service=preparation_service,
+            dummy_training_service=dummy_service,
             baseline_training_service=baseline_service,
             catboost_training_service=catboost_service,
             dataset_repository=dataset_repository,
@@ -128,8 +150,10 @@ class FullPipelineServiceTests(unittest.TestCase):
         result = service.run(self._make_raw_frame(), run_id=9, horizon=3, symbol="BTCUSDT")
 
         self.assertEqual(dataset_repository.loaded_path, final_path)
+        self.assertIs(dummy_service.seen_df, final_df)
         self.assertIs(baseline_service.seen_df, final_df)
         self.assertIs(catboost_service.seen_df, final_df)
+        self.assertIs(result.dummy_result, dummy_service.result)
         self.assertIs(result.baseline_result, baseline_service.result)
         self.assertIs(result.catboost_result, catboost_service.result)
 

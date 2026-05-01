@@ -14,6 +14,7 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationResult,
     DatasetPreparationService,
 )
+from mlcore.services.dummy_training_service import DummyTrainingResult, DummyTrainingService
 from mlcore.services.full_pipeline_service import FullPipelineResult, FullPipelineService
 from mlcore.services.report_service import TargetDistributionReportService
 from mlcore.services.run_persistence_service import RunPersistenceResult, RunPersistenceService
@@ -28,6 +29,8 @@ __all__ = [
     "CsvPipelineUploadUseCase",
     "DatasetPreparationResult",
     "DatasetPreparationService",
+    "DummyTrainingResult",
+    "DummyTrainingService",
     "FullPipelineResult",
     "FullPipelineService",
     "TargetDistributionReportService",

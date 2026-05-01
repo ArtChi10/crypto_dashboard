@@ -115,11 +115,14 @@ research extensions.
 
 The MVP currently trains:
 
+- DummyClassifier naive baseline with `strategy="most_frequent"`;
 - LogisticRegression baseline through an sklearn `Pipeline` with
   `StandardScaler`;
 - CatBoostClassifier as the main model.
 
-Both trainers require at least two classes in `y_train`.
+LogisticRegression and CatBoost require at least two classes in `y_train`.
+DummyClassifier intentionally allows one-class `y_train`, because it is a naive
+research baseline.
 
 ## 10. Metrics
 
@@ -156,7 +159,6 @@ Known limitations:
 - current validation is a single time-based holdout, not walk-forward;
 - no stability analysis by symbol, period, regime, or market condition yet;
 - no ablation study yet;
-- no dummy or majority-class baseline report yet;
 - no probability calibration analysis yet;
 - no out-of-sample degradation analysis yet.
 
@@ -170,7 +172,7 @@ Planned research steps:
 - walk-forward validation;
 - stability analysis by symbol and time period;
 - ablation study for feature groups;
-- dummy and majority-class baselines;
+- additional dummy baseline strategies, such as `prior` and `stratified`;
 - probability calibration;
 - out-of-sample degradation analysis;
 - comparison across intervals and horizons;

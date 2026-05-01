@@ -17,6 +17,7 @@ from mlcore.services import (  # noqa: E402
     FullPipelineResult,
     RunPersistenceService,
 )
+from mlcore.services.dummy_training_service import DummyTrainingResult  # noqa: E402
 from runs.models import (  # noqa: E402
     DatasetArtifact,
     MetricSnapshot,
@@ -43,8 +44,8 @@ class RunPersistenceServiceTests(unittest.TestCase):
         saved = self.service.save_full_pipeline_result(run, result)
 
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
-        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
-        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
+        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 3)
+        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 3)
         self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 3)
 
         processed_artifact = DatasetArtifact.objects.get(
@@ -59,6 +60,25 @@ class RunPersistenceServiceTests(unittest.TestCase):
         self.assertEqual(processed_artifact.row_count, 80)
         self.assertEqual(final_artifact.file_path, "datasets/final/final.parquet")
         self.assertEqual(final_artifact.row_count, 60)
+
+        dummy_model = ModelArtifact.objects.get(
+            run=run,
+            model_type="dummy",
+        )
+        self.assertEqual(dummy_model.file_path, "models/dummy.joblib")
+        self.assertEqual(dummy_model.params_json["feature_columns"], ["feature_1", "feature_2"])
+        self.assertEqual(dummy_model.params_json["train_rows"], 42)
+
+        dummy_metrics = MetricSnapshot.objects.get(
+            run=run,
+            model_type="dummy",
+        )
+        self.assertEqual(dummy_metrics.accuracy, 0.7)
+        self.assertEqual(dummy_metrics.precision, 0.0)
+        self.assertEqual(dummy_metrics.recall, 0.0)
+        self.assertEqual(dummy_metrics.f1, 0.0)
+        self.assertEqual(dummy_metrics.roc_auc, 0.5)
+        self.assertEqual(dummy_metrics.confusion_matrix_json, [[4, 0], [2, 0]])
 
         baseline_model = ModelArtifact.objects.get(
             run=run,
@@ -97,6 +117,8 @@ class RunPersistenceServiceTests(unittest.TestCase):
 
         self.assertEqual(saved.processed_dataset_artifact, processed_artifact)
         self.assertEqual(saved.final_dataset_artifact, final_artifact)
+        self.assertEqual(saved.dummy_model_artifact, dummy_model)
+        self.assertEqual(saved.dummy_metric_snapshot, dummy_metrics)
         self.assertEqual(saved.baseline_model_artifact, baseline_model)
         self.assertIsNotNone(saved.catboost_model_artifact)
         self.assertIsNotNone(saved.catboost_metric_snapshot)
@@ -111,14 +133,14 @@ class RunPersistenceServiceTests(unittest.TestCase):
         saved = self.service.save_full_pipeline_result(run, result)
 
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
-        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
-        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
+        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
         self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 3)
         self.assertIsNone(saved.baseline_model_artifact)
         self.assertIsNone(saved.baseline_metric_snapshot)
         self.assertEqual(
-            ModelArtifact.objects.get(run=run).model_type,
-            ModelArtifact.ModelType.CATBOOST,
+            set(ModelArtifact.objects.filter(run=run).values_list("model_type", flat=True)),
+            {"dummy", ModelArtifact.ModelType.CATBOOST},
         )
 
     def test_save_full_pipeline_result_allows_missing_catboost_result(self):
@@ -128,14 +150,14 @@ class RunPersistenceServiceTests(unittest.TestCase):
         saved = self.service.save_full_pipeline_result(run, result)
 
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 2)
-        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
-        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
+        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
         self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
         self.assertIsNone(saved.catboost_model_artifact)
         self.assertIsNone(saved.catboost_metric_snapshot)
         self.assertEqual(
-            ModelArtifact.objects.get(run=run).model_type,
-            ModelArtifact.ModelType.BASELINE,
+            set(ModelArtifact.objects.filter(run=run).values_list("model_type", flat=True)),
+            {"dummy", ModelArtifact.ModelType.BASELINE},
         )
 
     def test_save_full_pipeline_result_uses_transaction_atomic(self):
@@ -174,9 +196,26 @@ class RunPersistenceServiceTests(unittest.TestCase):
 
     @staticmethod
     def _make_result(
+        dummy_result=DEFAULT_RESULT,
         baseline_result=DEFAULT_RESULT,
         catboost_result=DEFAULT_RESULT,
     ) -> FullPipelineResult:
+        if dummy_result is DEFAULT_RESULT:
+            dummy_result = DummyTrainingResult(
+                model_path=Path(settings.MEDIA_ROOT) / "models" / "dummy.joblib",
+                metrics={
+                    "accuracy": 0.7,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1": 0.0,
+                    "roc_auc": 0.5,
+                    "confusion_matrix": [[4, 0], [2, 0]],
+                },
+                feature_columns=["feature_1", "feature_2"],
+                train_rows=42,
+                valid_rows=9,
+                test_rows=9,
+            )
         if baseline_result is DEFAULT_RESULT:
             baseline_result = BaselineTrainingResult(
                 model_path=Path(settings.MEDIA_ROOT) / "models" / "baseline.joblib",
@@ -225,6 +264,7 @@ class RunPersistenceServiceTests(unittest.TestCase):
             ),
             baseline_result=baseline_result,
             catboost_result=catboost_result,
+            dummy_result=dummy_result,
             target_distribution_report_path=Path(settings.MEDIA_ROOT)
             / "reports"
             / "target_distribution.png",

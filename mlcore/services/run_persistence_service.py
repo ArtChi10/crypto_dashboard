@@ -15,12 +15,16 @@ class RunPersistenceResult:
     baseline_metric_snapshot: Any | None
     catboost_model_artifact: Any | None
     catboost_metric_snapshot: Any | None
+    dummy_model_artifact: Any | None = None
+    dummy_metric_snapshot: Any | None = None
     target_distribution_report_artifact: Any | None = None
     metrics_comparison_report_artifact: Any | None = None
     feature_importance_report_artifact: Any | None = None
 
 
 class RunPersistenceService:
+    DUMMY_MODEL_TYPE = "dummy"
+
     def save_full_pipeline_result(self, run: Any, result: Any) -> RunPersistenceResult:
         from django.db import transaction
 
@@ -39,6 +43,23 @@ class RunPersistenceService:
                 file_path=self._metadata_path(result.preparation_result.final_path),
                 row_count=result.preparation_result.final_rows,
             )
+            dummy_model_artifact = None
+            dummy_metric_snapshot = None
+            dummy_result = getattr(result, "dummy_result", None)
+            if dummy_result is not None:
+                dummy_model_artifact = self._create_model_artifact(
+                    ModelArtifact,
+                    run,
+                    model_type=self.DUMMY_MODEL_TYPE,
+                    model_result=dummy_result,
+                )
+                dummy_metric_snapshot = self._create_metric_snapshot(
+                    MetricSnapshot,
+                    run,
+                    model_type=self.DUMMY_MODEL_TYPE,
+                    metrics=dummy_result.metrics,
+                )
+
             baseline_model_artifact = None
             baseline_metric_snapshot = None
             if result.baseline_result is not None:
@@ -113,6 +134,8 @@ class RunPersistenceService:
         return RunPersistenceResult(
             processed_dataset_artifact=processed_dataset_artifact,
             final_dataset_artifact=final_dataset_artifact,
+            dummy_model_artifact=dummy_model_artifact,
+            dummy_metric_snapshot=dummy_metric_snapshot,
             baseline_model_artifact=baseline_model_artifact,
             baseline_metric_snapshot=baseline_metric_snapshot,
             catboost_model_artifact=catboost_model_artifact,

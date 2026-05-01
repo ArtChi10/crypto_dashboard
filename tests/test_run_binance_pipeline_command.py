@@ -64,8 +64,8 @@ class RunBinancePipelineCommandTests(unittest.TestCase):
         self.assertEqual(run.target_horizon, 3)
         self.assertEqual(run.initiated_by, "binance_cli")
         self.assertEqual(DatasetArtifact.objects.filter(run=run).count(), 3)
-        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 1)
-        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 1)
+        self.assertEqual(ModelArtifact.objects.filter(run=run).count(), 2)
+        self.assertEqual(MetricSnapshot.objects.filter(run=run).count(), 2)
         self.assertEqual(ReportArtifact.objects.filter(run=run).count(), 2)
 
         raw_artifact = DatasetArtifact.objects.get(
@@ -180,10 +180,10 @@ class RunBinancePipelineCommandTests(unittest.TestCase):
 
         for file_path in file_paths:
             path = Path(file_path)
-            if not path.is_absolute():
-                path = Path(settings.MEDIA_ROOT) / path
-            if path.exists():
-                path.unlink()
+            paths = [path] if path.is_absolute() else [path, Path(settings.MEDIA_ROOT) / path]
+            for candidate in paths:
+                if candidate.exists():
+                    candidate.unlink()
 
 
 class RecordingMarketDataProvider:
