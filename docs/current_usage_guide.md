@@ -45,6 +45,8 @@ media/ = большие файлы datasets, models, reports
 - Страница `/binance/` для загрузки OHLCV candles из Binance и синхронного
   запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
+  Он централизованно знает все dataset/model/report types, включая
+  `stability_table` и `stability_plot`.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
 - `BinanceMarketDataProvider` для загрузки OHLCV candles из Binance Spot REST API
   в pandas `DataFrame`.

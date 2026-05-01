@@ -88,6 +88,11 @@ media/datasets/raw/raw_run_12_BTCUSDT_20260427_120501.csv
 - report artifacts попадали в `reports`;
 - имена файлов были предсказуемыми.
 
+Новые stability reports тоже строят paths через `ArtifactRepository`:
+
+- `stability_table` - CSV table;
+- `stability_plot` - PNG chart.
+
 Это похоже на библиотекаря, который знает, на какую полку поставить каждую
 книгу.
 

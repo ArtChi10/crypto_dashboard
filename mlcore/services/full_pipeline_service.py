@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -255,16 +254,7 @@ class FullPipelineService:
         artifact_repository = self.artifact_repository
         if artifact_repository is None:
             artifact_repository = ArtifactRepository(self._base_dir_from_final_path(final_path))
-        try:
-            return artifact_repository.report_path(report_type, run_id=run_id, extension=extension)
-        except ValueError:
-            if report_type not in {"stability_table", "stability_plot"}:
-                raise
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            directory = artifact_repository.base_dir / "reports"
-            directory.mkdir(parents=True, exist_ok=True)
-            return directory / f"{report_type}_run_{run_id}_{timestamp}.{extension}"
+        return artifact_repository.report_path(report_type, run_id=run_id, extension=extension)
 
     @staticmethod
     def _base_dir_from_final_path(final_path: Path) -> Path:

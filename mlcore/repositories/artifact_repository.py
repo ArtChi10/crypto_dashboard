@@ -9,7 +9,14 @@ class ArtifactRepository:
     DATASET_TYPES = frozenset({"raw", "processed", "final"})
     MODEL_TYPES = frozenset({"baseline", "catboost"})
     REPORT_TYPES = frozenset(
-        {"price_plot", "target_distribution", "feature_importance", "metrics_plot"}
+        {
+            "price_plot",
+            "target_distribution",
+            "feature_importance",
+            "metrics_plot",
+            "stability_table",
+            "stability_plot",
+        }
     )
 
     _TIMESTAMP_PATTERN = re.compile(r"^\d{8}_\d{6}$")
