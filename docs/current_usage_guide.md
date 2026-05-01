@@ -260,6 +260,26 @@ http://127.0.0.1:8000/binance/
 ошибка произошла после создания run, страница перенаправит на detail page, где
 будет виден статус `Failed` и текст ошибки.
 
+## Manual Test Phase 3: Binance Pipeline UI
+
+Manual Test Phase 3 пройден успешно: Binance Pipeline UI запускает реальный
+MVP-пайплайн из веб-интерфейса.
+
+Проверено вручную:
+
+- `/binance/` открывается и показывает Binance form;
+- форма Binance запускает real network pipeline через Binance Spot REST API;
+- создаются raw, processed и final datasets;
+- создаются baseline и CatBoost model artifacts;
+- создаются `MetricSnapshot` для моделей;
+- создаются PNG reports: target distribution, metrics comparison и CatBoost
+  feature importance;
+- detail page `/runs/<id>/` показывает artifacts, metrics и inline PNG reports.
+
+Важно: высокие metrics на коротком периоде не доказывают рыночную
+предсказательность. Это research/MVP pipeline для воспроизводимых экспериментов,
+а не production trading system.
+
 ## Как запустить raw CSV pipeline из CLI
 
 Management command использует тот же `CsvPipelineUploadUseCase`, что и страница
@@ -509,9 +529,8 @@ metrics. Его задача только сохранить metadata в Django 
 записывает короткий текст ошибки в `error_message`, заполняет `finished_at` и
 повторно выбрасывает исключение.
 
-Это все еще ручной Python use case. UI пока не вызывает его автоматически.
-Загрузка данных из Binance существует отдельным provider-ом и пока не подключена
-к `RunPipelineUseCase`.
+`RunPipelineUseCase` сам не скачивает данные. CSV и Binance входы сначала
+получают raw `DataFrame`, а потом передают его в этот use case.
 
 ## Как вручную загрузить OHLCV candles из Binance
 
