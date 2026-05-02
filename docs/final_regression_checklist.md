@@ -66,12 +66,13 @@ Check the following pages:
 CSV pipeline:
 
 ```powershell
-.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv tmp_cli_check/input.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-05 --target-horizon 3 --skip-catboost
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3 --skip-catboost
 ```
 
 Expected:
 
 - command is available;
+- works offline with the committed synthetic sample dataset;
 - creates a `PipelineRun`;
 - creates raw, processed, and final dataset artifacts;
 - creates selected model artifacts and metric snapshots;

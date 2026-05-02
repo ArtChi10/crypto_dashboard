@@ -309,10 +309,15 @@ Management command использует тот же `CsvPipelineUploadUseCase`, 
 `/upload/`. Команда не дублирует pipeline-логику, а только проверяет CLI-аргументы
 и передает CSV-файл в use case.
 
+Для offline demo в репозитории есть deterministic synthetic sample dataset:
+`data/samples/sample_ohlcv.csv`. Он не требует Binance/network access и нужен
+для smoke checks. Это не реальные рыночные данные и не доказательство качества
+модели.
+
 Пример:
 
 ```powershell
-.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv tmp_cli_check/input.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-05 --target-horizon 3
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3
 ```
 
 Опциональные flags:

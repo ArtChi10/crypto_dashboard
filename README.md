@@ -156,6 +156,31 @@ environment, so task verification commands use:
 .crypto\Scripts\python.exe ...
 ```
 
+## Offline Demo Dataset
+
+The repository includes a small deterministic synthetic OHLCV dataset for
+offline demos:
+
+```text
+data/samples/sample_ohlcv.csv
+```
+
+It follows the expected CSV schema and does not require Binance/network access.
+It is useful for smoke checks and local demonstrations only; it is not real
+market data and must not be used for performance claims.
+
+Run the CSV pipeline on the sample dataset:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3
+```
+
+Generic equivalent:
+
+```powershell
+python manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3
+```
+
 ## Running Pipelines
 
 CSV through UI:

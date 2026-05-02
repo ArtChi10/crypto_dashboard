@@ -33,7 +33,9 @@ strong claims are made about market predictability.
 
 ## 4. Data
 
-The MVP supports Binance Spot OHLCV candles and uploaded OHLCV CSV files.
+The MVP supports Binance Spot OHLCV candles and uploaded OHLCV CSV files. The
+repository also includes a small deterministic synthetic sample dataset at
+`data/samples/sample_ohlcv.csv` for offline demo and smoke-check reproducibility.
 
 Expected columns:
 
@@ -48,6 +50,10 @@ Expected columns:
 Supported symbols and intervals depend on Binance Spot API availability. The
 current UI and CLI examples use `BTCUSDT` and `1h`, but the pipeline is designed
 to accept other valid Binance symbols and candle intervals.
+
+The committed sample dataset is not real market data. It exists so the pipeline
+can be exercised without Binance/network access and must not be used for claims
+about market predictability or model performance.
 
 ## 5. Target Definition
 
@@ -218,7 +224,7 @@ Planned research steps:
 Run from CSV via CLI:
 
 ```powershell
-.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv tmp_cli_check/input.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-05 --target-horizon 3
+.crypto\Scripts\python.exe manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3
 ```
 
 Run from Binance via CLI:
