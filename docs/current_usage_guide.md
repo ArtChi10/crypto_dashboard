@@ -314,6 +314,9 @@ Management command использует тот же `CsvPipelineUploadUseCase`, 
 для smoke checks. Это не реальные рыночные данные и не доказательство качества
 модели.
 
+Краткий EDA report по sample dataset доступен здесь:
+[`docs/eda_sample_dataset.md`](eda_sample_dataset.md).
+
 Пример:
 
 ```powershell

@@ -55,6 +55,11 @@ The committed sample dataset is not real market data. It exists so the pipeline
 can be exercised without Binance/network access and must not be used for claims
 about market predictability or model performance.
 
+A compact EDA report for the committed sample dataset is available at
+[`docs/eda_sample_dataset.md`](eda_sample_dataset.md). It documents schema,
+missing values, numeric summaries, returns distribution, and target balance
+after the current feature/target pipeline.
+
 ## 5. Target Definition
 
 The current target is:

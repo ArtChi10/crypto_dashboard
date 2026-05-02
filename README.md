@@ -169,6 +169,10 @@ It follows the expected CSV schema and does not require Binance/network access.
 It is useful for smoke checks and local demonstrations only; it is not real
 market data and must not be used for performance claims.
 
+See the [sample dataset EDA report](docs/eda_sample_dataset.md) for schema,
+missing values, summary statistics, returns distribution, and target balance
+after the current feature/target pipeline.
+
 Run the CSV pipeline on the sample dataset:
 
 ```powershell
@@ -279,6 +283,7 @@ as files.
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Research report](docs/research_report.md)
+- [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Storage architecture](docs/storage_architecture.md)
 - [Final regression checklist](docs/final_regression_checklist.md)
 
