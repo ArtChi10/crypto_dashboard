@@ -47,6 +47,24 @@ This project is not:
   - walk-forward evaluation CLI;
   - feature ablation CLI.
 
+## Screenshots
+
+Dashboard overview:
+
+![Dashboard](docs/assets/screenshots/dashboard.png)
+
+Binance pipeline form:
+
+![Binance pipeline form](docs/assets/screenshots/binance_form.png)
+
+Run detail metrics and stability preview:
+
+![Run detail metrics](docs/assets/screenshots/run_detail_metrics.png)
+
+Run detail report gallery:
+
+![Run detail reports](docs/assets/screenshots/run_detail_reports.png)
+
 ## Architecture Overview
 
 ```mermaid
