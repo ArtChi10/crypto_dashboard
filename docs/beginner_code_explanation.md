@@ -275,6 +275,39 @@ fold 3: ...
 Сейчас это research utility: он не сохраняет artifacts, не пишет в Django DB и
 не подключен к основному pipeline/UI.
 
+## Что делает FeatureAblationService
+
+`FeatureAblationService` помогает понять, какие группы признаков дают вклад в
+качество модели.
+
+Сейчас есть стандартные группы:
+
+- `price_raw`: `open`, `high`, `low`, `close`;
+- `returns`: `return_1`, `return_3`, `return_6`, `return_12`;
+- `moving_average`: `ma_7`, `ma_14`, `ema_7`, `ema_30`;
+- `volatility`: `volatility_7`, `volatility_14`;
+- `volume`: `volume`, `volume_change`, `volume_ma_7`;
+- `candle`: `candle_body`, `candle_range`.
+
+В основном режиме service сначала обучает модель на `all_features`, а потом
+повторяет experiment без каждой группы:
+
+```text
+all_features
+without_price_raw
+without_returns
+without_moving_average
+...
+```
+
+Для каждого experiment вызывается `trainer_factory`, поэтому модель создается
+заново и результаты не смешиваются между experiments. Если какая-то группа
+отсутствует в dataset, service возвращает row с `error_message`, а не ломает
+весь анализ.
+
+Сейчас это ручной research-инструмент: он не сохраняет artifacts, не пишет в
+Django DB и не подключен к основному pipeline/UI.
+
 ## Что делает Evaluator
 
 `Evaluator` считает качество модели.
@@ -752,6 +785,7 @@ raw data
 - Временной split.
 - Research walk-forward folds без random shuffle.
 - Research walk-forward evaluation по folds.
+- Research feature ablation по группам признаков.
 - Метрики качества.
 - Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.

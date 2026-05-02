@@ -155,7 +155,9 @@ The evaluation layer also includes:
 - `WalkForwardValidationService`, which builds sequential walk-forward folds;
 - `WalkForwardEvaluationService`, which trains and evaluates a supplied trainer
   fold by fold and records fold errors without stopping the whole run by
-  default.
+  default;
+- `FeatureAblationService`, which compares metrics for all available features
+  against experiments that remove predefined feature groups.
 
 ## 11. Current Reports
 
@@ -181,10 +183,12 @@ Known limitations:
 - walk-forward fold generation and fold-by-fold evaluation exist only as
   standalone research utilities;
 - walk-forward persistence, UI, and report integration are not implemented yet;
+- feature ablation exists as a standalone research utility, but ablation reports
+  and pipeline integration are not implemented yet;
 - period stability is currently based on the single holdout test segment, not on
   rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
-- no ablation study yet;
+- no automated ablation artifact/report generation yet;
 - no probability calibration analysis yet;
 - no out-of-sample degradation analysis yet.
 
@@ -197,7 +201,7 @@ Planned research steps:
 
 - integrate walk-forward evaluation with reporting and experiment persistence;
 - stability analysis by symbol and market regime;
-- ablation study for feature groups;
+- integrate feature ablation with reporting and experiment persistence;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
 - probability calibration;
 - out-of-sample degradation analysis;

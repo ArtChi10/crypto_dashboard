@@ -59,6 +59,8 @@ media/ = большие файлы datasets, models, reports
   последовательные train/test folds без random shuffle.
 - `WalkForwardEvaluationService` для fold-by-fold обучения и оценки trainer без
   интеграции в основной pipeline.
+- `FeatureAblationService` для research-сравнения групп признаков через
+  `all_features` и `without_<group>` experiments.
 - `Evaluator` для расчета classification metrics.
 - `PeriodStabilityAnalysisService` для research-анализа metrics по временным
   сегментам predictions.
@@ -530,6 +532,22 @@ metrics `None`. При `raise_on_error=True` ошибка пробрасывае
 Этот service пока не интегрирован в `FullPipelineService`, Django metadata, UI
 или report artifacts. Это ручной research-инструмент для проверки идей перед
 следующей интеграцией.
+
+## Как вручную проверить FeatureAblationService
+
+`FeatureAblationService` сравнивает вклад feature groups. По умолчанию он знает
+группы `price_raw`, `returns`, `moving_average`, `volatility`, `volume` и
+`candle`. В режиме `drop_groups` service считает `all_features`, а затем
+эксперименты `without_<group>`. Для каждого experiment создается новый trainer
+через `trainer_factory`.
+
+```powershell
+.crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.ablation import FeatureAblationService; from mlcore.training.dummy_trainer import DummyBaselineTrainer; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=60, freq='h'), 'open':range(60), 'high':range(1,61), 'low':range(0,60), 'close':range(60), 'return_1':[0.1]*60, 'volume':range(100,160), 'target':[0,1]*30}); train=df.iloc[:40].reset_index(drop=True); test=df.iloc[40:].reset_index(drop=True); result=FeatureAblationService().evaluate_groups(lambda: DummyBaselineTrainer(), train, test); print(result[['experiment','included_feature_count','accuracy','error_message']].head().to_dict('records')); print(len(result))"
+```
+
+Если группа признаков отсутствует в `train`/`test`, service не падает: он
+возвращает row с `error_message`. Сервис не сохраняет artifacts и пока не
+интегрирован в основной pipeline/UI.
 
 ## Как вручную проверить FullPipelineService
 
