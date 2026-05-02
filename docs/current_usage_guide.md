@@ -28,6 +28,22 @@ media/ = большие файлы datasets, models, reports
 папки `tmp_*`, не коммитятся. Они используются только для smoke checks и
 локальной ручной проверки.
 
+## Environment variables
+
+Django settings читают optional environment variables:
+
+```text
+DJANGO_SECRET_KEY=replace-me
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+```
+
+Defaults в `config/settings.py` подходят для local development и тестов:
+`DJANGO_SECRET_KEY` получает placeholder `dev-insecure-local-key`,
+`DJANGO_DEBUG=True`, а `ALLOWED_HOSTS` включает `localhost`, `127.0.0.1` и
+`testserver`. Пример значений хранится в `.env.example`; реальный `.env`
+игнорируется git и не должен коммититься.
+
 ## Что уже работает
 
 - Django project `config`.

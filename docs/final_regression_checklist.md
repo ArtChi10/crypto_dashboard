@@ -26,6 +26,17 @@ Expected result:
 - Ruff format check reports all files already formatted.
 - Unit test discovery passes.
 
+Optional environment sanity check:
+
+```powershell
+.crypto\Scripts\python.exe -c "import os; os.environ['DJANGO_DEBUG']='False'; os.environ['DJANGO_ALLOWED_HOSTS']='localhost,127.0.0.1,testserver'; import django; os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings'); from django.conf import settings; print(settings.DEBUG); print(settings.ALLOWED_HOSTS)"
+```
+
+Expected result:
+
+- `DEBUG` prints `False`.
+- `ALLOWED_HOSTS` includes `localhost`, `127.0.0.1`, and `testserver`.
+
 ## 3. UI Manual Checks
 
 Start the local server:

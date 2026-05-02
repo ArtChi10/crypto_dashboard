@@ -149,6 +149,18 @@ Open:
 http://127.0.0.1:8000/
 ```
 
+Optional Django environment variables:
+
+```text
+DJANGO_SECRET_KEY=replace-me
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+```
+
+Local development defaults are defined in `config/settings.py`, so the project
+can run without a `.env` file. Use `.env.example` as a reference if you want to
+set shell-level environment variables. Do not commit a real `.env` file.
+
 This workspace has been developed and checked with a local `.crypto` virtual
 environment, so task verification commands use:
 
