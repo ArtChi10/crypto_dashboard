@@ -307,6 +307,7 @@ push and pull request events.
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)
 - [Final regression checklist](docs/final_regression_checklist.md)
+- [Release readiness summary](docs/release_readiness.md)
 
 ## Engineering Highlights
 
