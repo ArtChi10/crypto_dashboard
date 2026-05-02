@@ -255,6 +255,7 @@ as files.
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Research report](docs/research_report.md)
 - [Storage architecture](docs/storage_architecture.md)
+- [Final regression checklist](docs/final_regression_checklist.md)
 
 ## Engineering Highlights
 
