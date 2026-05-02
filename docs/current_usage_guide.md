@@ -57,6 +57,8 @@ media/ = большие файлы datasets, models, reports
 - `SplitService` для временного train/valid/test split.
 - `WalkForwardValidationService` для research-разбиения временного ряда на
   последовательные train/test folds без random shuffle.
+- `WalkForwardEvaluationService` для fold-by-fold обучения и оценки trainer без
+  интеграции в основной pipeline.
 - `Evaluator` для расчета classification metrics.
 - `PeriodStabilityAnalysisService` для research-анализа metrics по временным
   сегментам predictions.
@@ -503,18 +505,31 @@ predictions. Он не обучает модели. На вход нужен `Da
 ## Как вручную проверить WalkForwardValidationService
 
 `WalkForwardValidationService` - это независимый research utility для
-walk-forward folds. Он сортирует строки по `timestamp`, строит train/test окна
-по количеству строк и не обучает модели. По умолчанию `step` равен
-`test_window`.
+walk-forward folds. Он сортирует строки по `timestamp` и строит train/test окна
+по количеству строк. По умолчанию `step` равен `test_window`.
 
 ```powershell
 .crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.walk_forward import WalkForwardValidationService; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=30, freq='h'), 'x':range(30), 'target':[0,1]*15}); folds=WalkForwardValidationService().split(df, train_window=10, test_window=5); print(len(folds)); print([(f.fold_id, len(f.train), len(f.test), f.train['timestamp'].max() < f.test['timestamp'].min()) for f in folds])"
 ```
 
 Ожидаемый смысл результата: получится несколько последовательных folds, в
-каждом `train` идет раньше `test`. Этот service пока не интегрирован в
-`FullPipelineService`; обучение и отчеты по walk-forward folds остаются
-следующим research-шагом.
+каждом `train` идет раньше `test`.
+
+## Как вручную проверить WalkForwardEvaluationService
+
+`WalkForwardEvaluationService` строит folds через `WalkForwardValidationService`,
+на каждом fold обучает переданный trainer, считает metrics через `Evaluator` и
+возвращает pandas `DataFrame`. Если обучение отдельного fold падает, например
+из-за one-class `y_train`, по умолчанию service записывает `error_message` и
+metrics `None`. При `raise_on_error=True` ошибка пробрасывается.
+
+```powershell
+.crypto\Scripts\python.exe -c "import pandas as pd; from mlcore.evaluation.walk_forward import WalkForwardEvaluationService; from mlcore.training.dummy_trainer import DummyBaselineTrainer; df=pd.DataFrame({'timestamp':pd.date_range('2024-01-01', periods=60, freq='h'), 'feature_1':range(60), 'feature_2':[x%5 for x in range(60)], 'target':[0,1]*30}); result=WalkForwardEvaluationService().evaluate(DummyBaselineTrainer(), df, train_window=20, test_window=10); print(len(result)); print(list(result.columns)); print(result[['fold_id','train_rows','test_rows','accuracy','f1']].head().to_dict('records'))"
+```
+
+Этот service пока не интегрирован в `FullPipelineService`, Django metadata, UI
+или report artifacts. Это ручной research-инструмент для проверки идей перед
+следующей интеграцией.
 
 ## Как вручную проверить FullPipelineService
 

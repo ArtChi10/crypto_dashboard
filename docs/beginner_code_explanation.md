@@ -247,8 +247,33 @@ fold 3: ...
 строк и повторяет.
 
 Важно: service сортирует данные по `timestamp`, не делает random shuffle и
-возвращает copies с reset index. Сейчас он только строит folds. Обучение моделей
-и отчеты по walk-forward validation будут отдельным research-шагом.
+возвращает copies с reset index.
+
+## Что делает WalkForwardEvaluationService
+
+`WalkForwardEvaluationService` делает следующий шаг после
+`WalkForwardValidationService`: он не только строит folds, но и проверяет модель
+на каждом fold.
+
+Для каждого fold он:
+
+1. Берет feature columns через `trainer.get_feature_columns(...)`, если такой
+   метод есть.
+2. Если такого метода нет, выбирает numeric columns и исключает `target`,
+   `timestamp` и `symbol`.
+3. Обучает trainer на train-части fold.
+4. Делает `predict` на test-части.
+5. Если модель умеет `predict_proba`, передает вероятности в `Evaluator`.
+6. Возвращает таблицу с `fold_id`, границами train/test окна, количеством строк
+   и metrics.
+
+Если обучение на отдельном fold падает, например из-за одного класса в
+`y_train`, service по умолчанию не останавливает весь анализ. Он записывает
+`error_message`, а metrics оставляет пустыми. Если нужно строгое поведение,
+можно передать `raise_on_error=True`.
+
+Сейчас это research utility: он не сохраняет artifacts, не пишет в Django DB и
+не подключен к основному pipeline/UI.
 
 ## Что делает Evaluator
 
@@ -726,6 +751,7 @@ raw data
 - Ручной `DatasetPreparationService`.
 - Временной split.
 - Research walk-forward folds без random shuffle.
+- Research walk-forward evaluation по folds.
 - Метрики качества.
 - Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.

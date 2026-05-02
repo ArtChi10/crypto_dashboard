@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from numbers import Integral
+from typing import Any
 
 import pandas as pd
+
+from mlcore.evaluation.evaluator import Evaluator
 
 
 @dataclass(frozen=True)
@@ -79,3 +82,120 @@ class WalkForwardValidationService:
         sorted_df = df.copy()
         sorted_df[timestamp_col] = pd.to_datetime(sorted_df[timestamp_col])
         return sorted_df.sort_values(timestamp_col).reset_index(drop=True)
+
+
+class WalkForwardEvaluationService:
+    EXCLUDED_FEATURE_COLUMNS = frozenset({"target", "timestamp", "symbol"})
+    METRIC_COLUMNS = ("accuracy", "precision", "recall", "f1", "roc_auc")
+
+    def __init__(
+        self,
+        validation_service: WalkForwardValidationService | None = None,
+        evaluator: Evaluator | None = None,
+    ) -> None:
+        self.validation_service = validation_service or WalkForwardValidationService()
+        self.evaluator = evaluator or Evaluator()
+
+    def evaluate(
+        self,
+        trainer: Any,
+        df: pd.DataFrame,
+        train_window: int,
+        test_window: int,
+        step: int | None = None,
+        target_col: str = "target",
+        timestamp_col: str = "timestamp",
+        raise_on_error: bool = False,
+    ) -> pd.DataFrame:
+        self._validate_target_column(df, target_col=target_col)
+        folds = self.validation_service.split(
+            df,
+            train_window=train_window,
+            test_window=test_window,
+            step=step,
+            timestamp_col=timestamp_col,
+        )
+
+        rows = []
+        for fold in folds:
+            base_row = self._base_row(fold)
+            try:
+                metrics = self._evaluate_fold(
+                    trainer=trainer,
+                    fold=fold,
+                    target_col=target_col,
+                    timestamp_col=timestamp_col,
+                )
+                rows.append({**base_row, **metrics, "error_message": None})
+            except Exception as exc:
+                if raise_on_error:
+                    raise
+                rows.append({**base_row, **self._empty_metrics(), "error_message": str(exc)})
+
+        return pd.DataFrame(rows)
+
+    def _evaluate_fold(
+        self,
+        trainer: Any,
+        fold: WalkForwardFold,
+        target_col: str,
+        timestamp_col: str,
+    ) -> dict[str, Any]:
+        feature_columns = self._feature_columns(
+            trainer=trainer,
+            df=fold.train,
+            target_col=target_col,
+            timestamp_col=timestamp_col,
+        )
+        if not feature_columns:
+            raise ValueError("fold train data must contain at least one numeric feature column.")
+
+        x_train = fold.train[feature_columns]
+        y_train = fold.train[target_col]
+        x_test = fold.test[feature_columns]
+        y_test = fold.test[target_col]
+
+        model = trainer.train(x_train, y_train)
+        y_pred = model.predict(x_test)
+        y_proba = None
+        if hasattr(model, "predict_proba"):
+            y_proba = model.predict_proba(x_test)
+
+        metrics = self.evaluator.evaluate_predictions(y_test, y_pred, y_proba)
+        return {column: metrics[column] for column in self.METRIC_COLUMNS}
+
+    @classmethod
+    def _feature_columns(
+        cls,
+        trainer: Any,
+        df: pd.DataFrame,
+        target_col: str,
+        timestamp_col: str,
+    ) -> list[str]:
+        if hasattr(trainer, "get_feature_columns"):
+            return list(trainer.get_feature_columns(df))
+
+        excluded_columns = cls.EXCLUDED_FEATURE_COLUMNS | {target_col, timestamp_col}
+        numeric_columns = df.select_dtypes(include="number").columns
+        return [column for column in numeric_columns if column not in excluded_columns]
+
+    @staticmethod
+    def _base_row(fold: WalkForwardFold) -> dict[str, Any]:
+        return {
+            "fold_id": fold.fold_id,
+            "train_start": fold.train_start,
+            "train_end": fold.train_end,
+            "test_start": fold.test_start,
+            "test_end": fold.test_end,
+            "train_rows": len(fold.train),
+            "test_rows": len(fold.test),
+        }
+
+    @classmethod
+    def _empty_metrics(cls) -> dict[str, None]:
+        return {column: None for column in cls.METRIC_COLUMNS}
+
+    @staticmethod
+    def _validate_target_column(df: pd.DataFrame, target_col: str) -> None:
+        if target_col not in df.columns:
+            raise ValueError(f"Missing required columns: {target_col}")

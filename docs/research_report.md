@@ -112,8 +112,12 @@ splits and rolling out-of-sample windows are planned research extensions.
 
 `WalkForwardValidationService` is now available as an independent research
 utility for building row-count based walk-forward folds. It creates chronological
-train/test windows without shuffle, but it is not yet integrated into the main
-training pipeline, persistence layer, or reports.
+train/test windows without shuffle.
+
+`WalkForwardEvaluationService` is also available as a standalone research
+utility. It trains a supplied trainer on each fold, evaluates metrics through
+`Evaluator`, and returns a fold-level `DataFrame`. It is not yet integrated into
+the main pipeline, persistence layer, UI, or reports.
 
 ## 9. Models
 
@@ -146,8 +150,12 @@ The evaluation layer also includes `PeriodStabilityAnalysisService`, which
 analyzes existing test predictions by daily, weekly, or any pandas frequency
 period. It returns per-period rows with class balance and classification metrics.
 
-The evaluation layer also includes `WalkForwardValidationService`, which builds
-sequential walk-forward folds for future rolling validation experiments.
+The evaluation layer also includes:
+
+- `WalkForwardValidationService`, which builds sequential walk-forward folds;
+- `WalkForwardEvaluationService`, which trains and evaluates a supplied trainer
+  fold by fold and records fold errors without stopping the whole run by
+  default.
 
 ## 11. Current Reports
 
@@ -170,8 +178,9 @@ Known limitations:
 - high metrics do not imply trading profitability;
 - no transaction costs, fees, slippage, or execution constraints are modeled;
 - the main pipeline still uses a single time-based holdout;
-- walk-forward fold generation exists, but fold-by-fold model training,
-  persistence, and report integration are not implemented yet;
+- walk-forward fold generation and fold-by-fold evaluation exist only as
+  standalone research utilities;
+- walk-forward persistence, UI, and report integration are not implemented yet;
 - period stability is currently based on the single holdout test segment, not on
   rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
@@ -186,7 +195,7 @@ or trading system.
 
 Planned research steps:
 
-- integrate `WalkForwardValidationService` with model training and evaluation;
+- integrate walk-forward evaluation with reporting and experiment persistence;
 - stability analysis by symbol and market regime;
 - ablation study for feature groups;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
