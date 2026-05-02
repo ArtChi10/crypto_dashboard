@@ -280,6 +280,9 @@ as files.
 .crypto\Scripts\python.exe -m unittest discover
 ```
 
+GitHub Actions CI runs the same Django check, Ruff checks, and unit tests on
+push and pull request events.
+
 ## Current Limitations
 
 - No async/background queue yet; UI pipeline runs are synchronous.

@@ -28,6 +28,10 @@ media/ = большие файлы datasets, models, reports
 папки `tmp_*`, не коммитятся. Они используются только для smoke checks и
 локальной ручной проверки.
 
+GitHub Actions CI запускает тот же базовый набор проверок на `push` и
+`pull_request`: `manage.py check`, `ruff check`, `ruff format --check` и
+`unittest discover`.
+
 ## Environment variables
 
 Django settings читают optional environment variables:
