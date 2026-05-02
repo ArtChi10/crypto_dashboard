@@ -186,6 +186,17 @@ The MVP currently creates PNG reports for:
 
 The run detail page displays report links and renders safe PNG reports inline.
 
+## Current Reproducible Experiment
+
+A recorded sample experiment is available at
+[`docs/experiment_summary_sample.md`](experiment_summary_sample.md). It uses the
+committed deterministic synthetic dataset, records the exact CSV pipeline
+command, and summarizes generated artifacts, dummy/baseline/CatBoost metrics,
+confusion matrices, and period stability output.
+
+This sample experiment is a reproducibility and pipeline sanity check only. It
+does not provide evidence of real market predictability.
+
 ## 12. Known Limitations
 
 Known limitations:

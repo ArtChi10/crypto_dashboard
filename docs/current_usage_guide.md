@@ -316,6 +316,8 @@ Management command использует тот же `CsvPipelineUploadUseCase`, 
 
 Краткий EDA report по sample dataset доступен здесь:
 [`docs/eda_sample_dataset.md`](eda_sample_dataset.md).
+Записанный reproducible experiment summary по sample run доступен здесь:
+[`docs/experiment_summary_sample.md`](experiment_summary_sample.md).
 
 Пример:
 

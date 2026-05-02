@@ -173,6 +173,10 @@ See the [sample dataset EDA report](docs/eda_sample_dataset.md) for schema,
 missing values, summary statistics, returns distribution, and target balance
 after the current feature/target pipeline.
 
+See the [sample experiment summary](docs/experiment_summary_sample.md) for a
+recorded pipeline run on this dataset, including parameters, artifacts, metrics,
+confusion matrices, and stability output.
+
 Run the CSV pipeline on the sample dataset:
 
 ```powershell
@@ -284,6 +288,7 @@ as files.
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Research report](docs/research_report.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
+- [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)
 - [Final regression checklist](docs/final_regression_checklist.md)
 
