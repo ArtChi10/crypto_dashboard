@@ -5,7 +5,7 @@ Binance or CSV OHLCV data. The project prepares datasets, trains baseline and
 main models, saves local artifacts, records metadata, and provides research
 utilities for time-aware model evaluation.
 
-This is a portfolio-oriented ML research project, not a trading product.
+This is a standalone pet/research ML project, not a trading product.
 
 ## What This Project Is / Is Not
 
@@ -240,7 +240,7 @@ as files.
 - No async/background queue yet; UI pipeline runs are synchronous.
 - Local filesystem artifact storage only.
 - No production deployment setup.
-- No live trading, order execution, portfolio logic, fees, slippage, or
+- No live trading, order execution, asset allocation logic, fees, slippage, or
   transaction cost modeling.
 - High metrics on a short historical period can be misleading.
 - The main pipeline still uses a single holdout split; walk-forward evaluation is
@@ -256,7 +256,7 @@ as files.
 - [Research report](docs/research_report.md)
 - [Storage architecture](docs/storage_architecture.md)
 
-## Interview Talking Points
+## Engineering Highlights
 
 - Clear separation between Django UI/orchestration and Django-independent ML
   services.

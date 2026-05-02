@@ -23,6 +23,10 @@ SQLite = metadata only
 media/ = большие файлы datasets, models, reports
 ```
 
+Локальные manual/test artifacts, например `manual_upload_test.csv` и временные
+папки `tmp_*`, не коммитятся. Они используются только для smoke checks и
+локальной ручной проверки.
+
 ## Что уже работает
 
 - Django project `config`.

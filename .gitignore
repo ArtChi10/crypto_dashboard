@@ -10,6 +10,18 @@ db.sqlite3
 
 local_notes/
 
+# Local manual/test artifacts
+manual_upload_test.csv
+tmp_cli_check/
+tmp_research_check/
+tmp_full_pipeline_check/
+tmp_use_case_check/
+tmp_persistence_check/
+tmp_catboost_service_check/
+tmp_baseline_service_check/
+tmp_dataset_preparation_check/
+tmp_model_repo_check/
+
 tmp_*/
 tmp_artifacts*/
 tmp_dataset_repo_check*/
