@@ -8,6 +8,11 @@ This document is a research report skeleton for the current MVP. It describes
 what is implemented, what is intentionally limited, and which research steps
 should come next. It does not claim trading profitability.
 
+The companion model card is available at
+[`docs/model_card.md`](model_card.md). It summarizes intended use,
+out-of-scope use, data, target, metrics, limitations, risks, mitigations, and
+reproducibility.
+
 ## 2. Problem Statement
 
 The current task is binary classification of short-term cryptocurrency price

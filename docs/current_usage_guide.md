@@ -15,6 +15,7 @@ CSV через `/upload/`, хранить ссылки на dataset/model/report
 запускать отдельные ML-компоненты из Python.
 
 Research report skeleton: [`docs/research_report.md`](research_report.md).
+Model card: [`docs/model_card.md`](model_card.md).
 
 Главное правило хранения:
 

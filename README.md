@@ -287,6 +287,7 @@ as files.
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Research report](docs/research_report.md)
+- [Model card](docs/model_card.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)
