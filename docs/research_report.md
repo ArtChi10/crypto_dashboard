@@ -159,6 +159,10 @@ The evaluation layer also includes:
 - `FeatureAblationService`, which compares metrics for all available features
   against experiments that remove predefined feature groups.
 
+The CLI command `run_research_evaluation` can run walk-forward evaluation and
+feature ablation on an existing final parquet/csv dataset and save CSV outputs
+without creating Django metadata.
+
 ## 11. Current Reports
 
 The MVP currently creates PNG reports for:
@@ -233,6 +237,12 @@ Run from uploaded CSV via UI:
 
 ```text
 http://127.0.0.1:8000/upload/
+```
+
+Run offline research checks on an existing final dataset:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_research_evaluation --dataset tmp_research_check/final.parquet --output-dir tmp_research_check/out --trainer dummy --run-walk-forward --run-ablation --train-window 40 --test-window 20
 ```
 
 Inspect results:

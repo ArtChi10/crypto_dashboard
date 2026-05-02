@@ -712,6 +712,29 @@ BinanceMarketDataProvider -> BinancePipelineUseCase -> RunPipelineUseCase -> Ful
 Raw Binance artifact выбран в формате parquet, потому что это внутренний dataset,
 а не пользовательский uploaded CSV.
 
+## Что делает run_research_evaluation command
+
+Management command `run_research_evaluation` - это offline CLI для research
+checks по уже готовому final dataset.
+
+Он принимает `.parquet` или `.csv` файл:
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_research_evaluation --dataset tmp_research_check/final.parquet --output-dir tmp_research_check/out --trainer dummy --run-walk-forward --run-ablation --train-window 40 --test-window 20
+```
+
+Команда умеет запускать:
+
+- `WalkForwardEvaluationService` и сохранять `walk_forward_<trainer>.csv`;
+- `FeatureAblationService` и сохранять `ablation_<trainer>.csv`.
+
+Доступные trainers в CLI: `dummy` и `baseline`. CatBoost пока специально не
+добавлен, чтобы command оставалась быстрой для локальных research checks.
+
+Важно: command не создает `PipelineRun`, не пишет в Django DB и не создает
+`ReportArtifact`. Это просто способ воспроизводимо сохранить research таблицы в
+файлы.
+
 ## Почему нельзя хранить большие datasets в SQLite
 
 SQLite в этом проекте - это тетрадь с описанием.
@@ -806,6 +829,7 @@ raw data
 - Синхронный запуск pipeline из raw CSV через `/upload/`.
 - CLI-запуск pipeline из raw CSV через `run_csv_pipeline`.
 - CLI-запуск pipeline из Binance data через `run_binance_pipeline`.
+- Offline CLI research evaluation через `run_research_evaluation`.
 
 ## Будет позже
 

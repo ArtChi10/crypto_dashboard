@@ -83,6 +83,8 @@ media/ = большие файлы datasets, models, reports
 - Management command `run_csv_pipeline` для запуска pipeline из CSV через CLI.
 - Management command `run_binance_pipeline` для загрузки Binance OHLCV и запуска
   pipeline через CLI.
+- Management command `run_research_evaluation` для offline research checks по
+  final parquet/csv dataset без записи в Django metadata.
 
 ## Что еще не работает
 
@@ -346,6 +348,31 @@ Management command `run_binance_pipeline` скачивает OHLCV candles че�
 завершится `CommandError` до создания run. При успехе выводятся `run id`,
 `run status` и detail URL вида `/runs/<id>/`. При ошибке после создания run его
 статус станет `failed`, а ошибка попадет в `PipelineRun.error_message`.
+
+## Как запустить research evaluation из CLI
+
+Management command `run_research_evaluation` запускает offline research checks
+по уже подготовленному final dataset. Он не создает `PipelineRun`, не пишет в
+SQLite, не создает `ReportArtifact` и не запускает main pipeline. Результаты
+сохраняются обычными CSV-файлами в `--output-dir`.
+
+```powershell
+.crypto\Scripts\python.exe manage.py run_research_evaluation --dataset tmp_research_check/final.parquet --output-dir tmp_research_check/out --trainer dummy --run-walk-forward --run-ablation --train-window 40 --test-window 20
+```
+
+Аргументы:
+
+- `--dataset` - путь к final `.parquet` или `.csv` dataset;
+- `--output-dir` - директория для CSV outputs, по умолчанию `research_outputs`;
+- `--target-col` - имя target column, по умолчанию `target`;
+- `--trainer` - `dummy` или `baseline`;
+- `--run-walk-forward` - сохранить `walk_forward_<trainer>.csv`;
+- `--run-ablation` - сохранить `ablation_<trainer>.csv`;
+- `--train-window`, `--test-window`, `--step` - параметры walk-forward windows.
+
+Для ablation command делает простой 70/30 split по `timestamp`. Для CatBoost
+CLI-поддержка отложена, чтобы команда оставалась быстрой и стабильной для
+ручных research checks.
 
 ## Как открыть /runs/ и /runs/<id>/
 
