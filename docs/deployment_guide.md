@@ -142,7 +142,8 @@ The workflow:
 - resets the server working tree to `origin/main`;
 - rebuilds and starts the production Docker Compose stack;
 - prints `docker compose` service status;
-- runs a server-local healthcheck.
+- runs a server-local healthcheck with retries, so the web container has time to
+  finish migrations, collect static files, and start Gunicorn.
 
 The server-local healthcheck uses the internal URL configured in
 `DEPLOY_HEALTHCHECK_URL`. The public site is currently reachable through the

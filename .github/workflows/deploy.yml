@@ -85,5 +85,17 @@ jobs:
           git reset --hard origin/main
           docker compose -f docker-compose.prod.yml up -d --build
           docker compose -f docker-compose.prod.yml ps
-          curl -fsS -I "$DEPLOY_HEALTHCHECK_URL"
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS -I "$DEPLOY_HEALTHCHECK_URL"; then
+              exit 0
+            fi
+
+            echo "Healthcheck attempt ${attempt}/30 failed; waiting for web service..."
+            sleep 5
+          done
+
+          docker compose -f docker-compose.prod.yml logs --tail=100 web
+          docker compose -f docker-compose.prod.yml logs --tail=100 proxy
+          exit 1
           EOF
