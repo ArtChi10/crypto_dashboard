@@ -6,13 +6,32 @@
     <div class="page-header">
         <p class="page-header__eyebrow">Dashboard</p>
         <h1>Crypto Dashboard</h1>
-        <p class="lede">ML-пайплайн прогнозирования направления цены криптовалют.</p>
+        <p class="lede">Обзорная страница research pipeline для OHLCV-данных.</p>
         <div class="toolbar">
             <a class="button" href="{% url 'dashboard:binance' %}">Запустить Binance pipeline</a>
-            <a class="button" href="{% url 'dashboard:upload' %}">Загрузить raw CSV</a>
+            <a class="button" href="{% url 'dashboard:upload' %}">Загрузить CSV dataset</a>
             <a class="button button--secondary" href="{% url 'runs:list' %}">История запусков</a>
         </div>
     </div>
+
+    <section class="section" aria-label="Project overview">
+        <h2>Что делает проект</h2>
+        <p>
+            Проект принимает OHLCV-данные из Binance или CSV, строит features и
+            target, обучает Dummy, LogisticRegression и CatBoost, а затем сохраняет
+            datasets, models, metrics и reports. Это research dashboard, а не
+            trading bot.
+        </p>
+    </section>
+
+    <section class="section" aria-label="Pipeline entry points">
+        <h2>Как запустить pipeline</h2>
+        <ol>
+            <li>Binance: откройте <a href="{% url 'dashboard:binance' %}">/binance/</a>, выберите symbol, interval и date range.</li>
+            <li>CSV: откройте <a href="{% url 'dashboard:upload' %}">/upload/</a>, загрузите CSV с timestamp, open, high, low, close и volume.</li>
+            <li>Результаты смотрите на странице <a href="{% url 'runs:list' %}">/runs/</a> и в detail view конкретного запуска.</li>
+        </ol>
+    </section>
 
     <section class="section" aria-label="Pipeline status">
         <h2>Статус</h2>
@@ -22,67 +41,6 @@
                 <span class="stat__value">{{ total_runs }}</span>
             </div>
         </div>
-    </section>
-
-    <section class="section" aria-label="Create pipeline run">
-        <h2>Новый запуск pipeline</h2>
-
-        <form class="form-panel" method="post">
-            {% csrf_token %}
-
-            {{ form.non_field_errors }}
-
-            <div class="form-grid">
-                <p class="form-row form-row--wide">
-                    {{ form.symbols.label_tag }}
-                    {{ form.symbols }}
-                    {{ form.symbols.errors }}
-                    {% if form.symbols.help_text %}
-                        <small class="muted">{{ form.symbols.help_text }}</small>
-                    {% endif %}
-                </p>
-
-                <p class="form-row">
-                    {{ form.interval.label_tag }}
-                    {{ form.interval }}
-                    {{ form.interval.errors }}
-                </p>
-
-                <p class="form-row">
-                    {{ form.start_date.label_tag }}
-                    {{ form.start_date }}
-                    {{ form.start_date.errors }}
-                </p>
-
-                <p class="form-row">
-                    {{ form.end_date.label_tag }}
-                    {{ form.end_date }}
-                    {{ form.end_date.errors }}
-                </p>
-
-                <p class="form-row">
-                    {{ form.target_horizon.label_tag }}
-                    {{ form.target_horizon }}
-                    {{ form.target_horizon.errors }}
-                </p>
-
-                <p class="form-row">
-                    {{ form.train_baseline }}
-                    {{ form.train_baseline.label_tag }}
-                    {{ form.train_baseline.errors }}
-                </p>
-
-                <p class="form-row">
-                    {{ form.train_main_model }}
-                    {{ form.train_main_model.label_tag }}
-                    {{ form.train_main_model.errors }}
-                </p>
-            </div>
-
-            <div class="toolbar">
-                <button type="submit">Создать запуск</button>
-            </div>
-        </form>
     </section>
 
     <section class="section" aria-label="Latest pipeline runs">
@@ -129,8 +87,7 @@
             </div>
         {% else %}
             <p class="empty-state">
-                Запусков pipeline пока нет. Когда появятся записи в metadata DB, последние
-                запуски будут показаны здесь.
+                Запусков пока нет. Запустите Binance pipeline или загрузите CSV dataset.
             </p>
         {% endif %}
     </section>

@@ -12,13 +12,13 @@ Django - это каркас веб-приложения.
 В этом проекте Django отвечает за:
 
 - страницы в браузере;
-- форму создания запуска;
+- формы реального запуска pipeline через Binance или CSV;
 - admin-панель;
-- SQLite database;
+- Django database;
 - models, то есть таблицы metadata.
 
 Django здесь не обучает модель сам. Он дает удобную оболочку: где посмотреть
-запуски, где создать запись запуска и где хранить metadata.
+запуски, где запустить pipeline через UI и где хранить metadata.
 
 ## Зачем нужны apps dashboard и runs
 
@@ -30,9 +30,10 @@ Django здесь не обучает модель сам. Он дает удо�
 На ней есть:
 
 - краткий статус;
-- форма создания нового `PipelineRun`;
+- короткое объяснение проекта;
 - ссылка на запуск Binance pipeline `/binance/`;
 - ссылка на ручную загрузку raw CSV `/upload/`;
+- ссылка на историю запусков `/runs/`;
 - список последних запусков.
 
 `runs` отвечает за страницы запусков:
@@ -58,8 +59,8 @@ Django здесь не обучает модель сам. Он дает удо�
 - когда он стартовал и закончился;
 - была ли ошибка.
 
-Сейчас создание `PipelineRun` через главную Dashboard-форму не запускает полный
-pipeline. Оно только создает metadata-запись со статусом `Created`.
+Главная страница больше не создает пустой `PipelineRun`. Это обзорная страница:
+она показывает ссылки на настоящие entry points и последние запуски.
 
 Для ручного запуска pipeline через UI есть отдельные страницы:
 
@@ -445,8 +446,8 @@ CatBoost `.cbm` сохраняется через native метод CatBoost `sa
 
 Это уже рабочий service для Python-кода.
 
-Сам по себе service не подключен к Dashboard-форме напрямую. В UI его вызывает
-общий `RunPipelineUseCase` на странице `/upload/`.
+Сам по себе service не вызывается из Dashboard напрямую. В UI его запускает
+общий `RunPipelineUseCase` через страницы `/upload/` и `/binance/`.
 
 ## Что делает DummyTrainingService
 
@@ -477,8 +478,8 @@ baseline-модели обучает `CatBoostClassifier`.
 
 Это уже рабочий service для Python-кода.
 
-Сам по себе service не подключен к Dashboard-форме напрямую. В UI его вызывает
-общий `RunPipelineUseCase` на странице `/upload/`.
+Сам по себе service не вызывается из Dashboard напрямую. В UI его запускает
+общий `RunPipelineUseCase` через страницы `/upload/` и `/binance/`.
 
 ## Что делает FullPipelineService
 
@@ -799,7 +800,7 @@ raw data
 - CSV upload `/upload/`.
 - Runs list `/runs/`.
 - Run detail `/runs/<id>/`.
-- Создание `PipelineRun` через UI.
+- Read-only Dashboard overview с ссылками на реальные pipeline entry points.
 - Repositories для datasets, models и artifact paths.
 - Очистка данных.
 - Построение features.
@@ -834,4 +835,4 @@ raw data
 ## Будет позже
 
 - Async/background queue для долгих запусков.
-- Подключение главной Dashboard-формы к реальному pipeline.
+- Более богатые dashboard previews для research outputs.

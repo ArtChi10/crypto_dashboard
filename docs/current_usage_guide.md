@@ -9,10 +9,10 @@
 `crypto_dashboard` - это Django-приложение для учета запусков ML-пайплайна,
 который должен прогнозировать направление цены криптовалют.
 
-Сейчас проект умеет хранить metadata о запусках, показывать простые страницы
-Dashboard и Runs, создавать запись `PipelineRun` через UI, загружать raw OHLCV
+Сейчас проект умеет хранить metadata о запусках, показывать обзорный Dashboard
+и Runs, запускать pipeline из Binance через `/binance/`, запускать pipeline из
 CSV через `/upload/`, хранить ссылки на dataset/model/report artifacts и
-запускать отдельные ML-компоненты из Python.
+запускать research/ML-компоненты из Python или CLI.
 
 Research report skeleton: [`docs/research_report.md`](research_report.md).
 Model card: [`docs/model_card.md`](model_card.md).
@@ -20,7 +20,9 @@ Model card: [`docs/model_card.md`](model_card.md).
 Главное правило хранения:
 
 ```text
-SQLite = metadata only
+Django DB = metadata only
+local default = SQLite
+Docker/production = PostgreSQL through DATABASE_URL
 media/ = большие файлы datasets, models, reports
 ```
 
@@ -101,8 +103,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 - Главная страница `/`.
 - История запусков `/runs/`.
 - Детальная страница запуска `/runs/<id>/`.
-- Минимальный общий UI layout и CSS для Dashboard, Upload и Runs pages.
-- Форма создания `PipelineRun` на главной странице.
+- Минимальный общий UI layout и CSS для Dashboard, Upload, Binance и Runs pages.
+- Обзорный Dashboard со ссылками на реальные pipeline entry points.
 - Страница `/upload/` для ручной загрузки raw OHLCV CSV, сохранения raw artifact
   и синхронного запуска pipeline.
 - Страница `/binance/` для загрузки OHLCV candles из Binance и синхронного
@@ -151,12 +153,10 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 
 ## Что еще не работает
 
-- Форма на главной странице создает только metadata-запись `PipelineRun`.
-- Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- Главная форма не запускает полный pipeline; для ручного запуска используйте
-  `/binance/` или `/upload/`.
 - Нет async/background queue: CSV upload и Binance page запускают pipeline
   синхронно.
+- Dashboard не запускает pipeline напрямую; он только показывает overview,
+  последние runs и ссылки на `/binance/`, `/upload/`, `/runs/`.
 
 ## Окружение
 
@@ -240,36 +240,36 @@ http://127.0.0.1:8000/
 
 - название проекта;
 - количество запусков;
+- короткое объяснение проекта;
+- ссылки на реальные entry points `/binance/`, `/upload/`, `/runs/`;
 - ссылка на историю `/runs/`;
 - ссылка на ручную загрузку `/upload/`;
-- форма создания нового `PipelineRun`;
 - таблица последних запусков.
 
-## Как создать PipelineRun через UI
+Dashboard больше не создает пустые `PipelineRun` records. POST-запросы на `/`
+не принимаются.
 
-1. Откройте Dashboard:
+## Как запустить pipeline через UI
+
+1. Для Binance откройте:
 
 ```text
-http://127.0.0.1:8000/
+http://127.0.0.1:8000/binance/
 ```
 
-2. Заполните форму:
+Выберите symbol, interval, date range, target horizon и модели.
 
-- `Symbols`: тикеры через запятую, например `BTCUSDT, ETHUSDT`;
-- `Interval`: интервал свечей, например `1h`;
-- `Start date`: начальная дата;
-- `End date`: конечная дата;
-- `Target horizon`: горизонт прогноза, например `3`;
-- `Train baseline`: сейчас чекбокс есть в форме, но обучение не запускает;
-- `Train main model`: сейчас чекбокс есть в форме, но обучение не запускает.
+2. Для CSV откройте:
 
-3. Нажмите `Создать запуск`.
+```text
+http://127.0.0.1:8000/upload/
+```
 
-После отправки формы Django создаст запись `PipelineRun` со статусом `Created`
-и перенаправит на страницу `/runs/<id>/`.
+Загрузите CSV с колонками `timestamp`, `open`, `high`, `low`, `close`,
+`volume`, `symbol`.
 
-Важно: эта Dashboard-форма не скачивает данные, не строит features, не обучает
-модель и не записывает metrics. Она создает metadata-запись запуска.
+3. После запуска pipeline результат открывается на `/runs/<id>/`; всю историю
+можно смотреть на `/runs/`.
 
 ## Как загрузить raw CSV и запустить pipeline
 
@@ -875,11 +875,7 @@ http://127.0.0.1:8000/admin/
 
 ## Current limitations
 
-- Binance provider уже подключен к CLI command `run_binance_pipeline` и странице
-  `/binance/`, но пока не подключен к основной Dashboard-форме.
-- Реальные metrics для metadata-only формы на Dashboard пока не пишутся автоматически.
-- Чекбоксы `Train baseline` и `Train main model` пока не запускают обучение.
-- Главная Dashboard-форма остается metadata-only.
 - CSV upload, Binance page и CLI commands запускают pipeline синхронно, без async queue.
-- `CsvPipelineUploadUseCase` подключен к `/upload/` и `run_csv_pipeline`, но не к
-  основной Dashboard-форме.
+- Dashboard является read-only overview page и не создает `PipelineRun`.
+- Для запуска pipeline используйте `/binance/`, `/upload/`, `run_csv_pipeline`
+  или `run_binance_pipeline`.
