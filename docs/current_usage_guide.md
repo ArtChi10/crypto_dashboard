@@ -30,7 +30,7 @@ media/ = большие файлы datasets, models, reports
 
 GitHub Actions CI запускает тот же базовый набор проверок на `push` и
 `pull_request`: `manage.py check`, `ruff check`, `ruff format --check` и
-`unittest discover`.
+`manage.py test`.
 
 ## Environment variables
 
@@ -194,7 +194,7 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 .crypto\Scripts\python.exe manage.py check
 .crypto\Scripts\python.exe -m ruff check .
 .crypto\Scripts\python.exe -m ruff format --check .
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 Что делают команды:
@@ -202,7 +202,7 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 - `manage.py check` проверяет Django-настройки и конфигурацию проекта.
 - `ruff check .` запускает lint-проверку Python-кода.
 - `ruff format --check .` проверяет форматирование без изменения файлов.
-- `unittest discover` запускает unit tests.
+- `manage.py test` запускает Django test runner с test database и migrations.
 
 ## Как запустить сервер
 
@@ -517,10 +517,10 @@ http://127.0.0.1:8000/admin/
 Admin полезен для ручной проверки записей в SQLite. Он не является pipeline
 runner и сам не обучает модели.
 
-## Как запустить unit tests
+## Как запустить tests
 
 ```powershell
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 Тесты лежат в папке `tests/` и проверяют repositories, preprocessing, features,
@@ -840,7 +840,7 @@ SQLite подходит для небольших записей:
 Запустить tests:
 
 ```powershell
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 Запустить Ruff lint:

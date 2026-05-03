@@ -230,7 +230,7 @@ Standard checks:
 .crypto\Scripts\python.exe manage.py check
 .crypto\Scripts\python.exe -m ruff check .
 .crypto\Scripts\python.exe -m ruff format --check .
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 ## 15. Version / Status

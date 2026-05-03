@@ -303,11 +303,11 @@ as files.
 .crypto\Scripts\python.exe manage.py check
 .crypto\Scripts\python.exe -m ruff check .
 .crypto\Scripts\python.exe -m ruff format --check .
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
-GitHub Actions CI runs the same Django check, Ruff checks, and unit tests on
-push and pull request events.
+GitHub Actions CI runs the same Django check, Ruff checks, and Django test
+runner on push and pull request events.
 
 ## Current Limitations
 

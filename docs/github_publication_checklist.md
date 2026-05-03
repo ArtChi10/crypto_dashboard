@@ -12,7 +12,7 @@ git status --short
 .crypto\Scripts\python.exe manage.py check
 .crypto\Scripts\python.exe -m ruff check .
 .crypto\Scripts\python.exe -m ruff format --check .
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 Expected result:
@@ -21,7 +21,7 @@ Expected result:
 - Django system check reports no issues;
 - Ruff check passes;
 - Ruff format check reports all files already formatted;
-- unit tests pass.
+- Django test runner passes.
 
 ## 2. Files That Must Be Public
 

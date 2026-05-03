@@ -50,7 +50,7 @@ Latest local verification commands:
 .crypto\Scripts\python.exe manage.py check
 .crypto\Scripts\python.exe -m ruff check .
 .crypto\Scripts\python.exe -m ruff format --check .
-.crypto\Scripts\python.exe -m unittest discover
+.crypto\Scripts\python.exe manage.py test
 ```
 
 Latest known local results:
@@ -60,7 +60,7 @@ Latest known local results:
 | Django system check | Passed |
 | Ruff check | Passed |
 | Ruff format check | Passed |
-| Unit tests | Passed |
+| Django test runner | Passed |
 | Git status | Clean |
 | CI workflow | Configured |
 | Docker Compose local stack | Configured |
