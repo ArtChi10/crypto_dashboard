@@ -308,6 +308,7 @@ push and pull request events.
 - [Storage architecture](docs/storage_architecture.md)
 - [Final regression checklist](docs/final_regression_checklist.md)
 - [Release readiness summary](docs/release_readiness.md)
+- [GitHub publication checklist](docs/github_publication_checklist.md)
 
 ## Engineering Highlights
 
