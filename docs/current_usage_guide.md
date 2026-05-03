@@ -74,6 +74,20 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 Локальный `.crypto` workflow по-прежнему использует SQLite, если
 `DATABASE_URL` не задан в shell environment.
 
+## Production-oriented Docker Compose
+
+Для серверного HTTP setup без HTTPS добавлен отдельный compose file:
+`docker-compose.prod.yml`. Он описывает services `web`, `db` и `proxy`:
+
+- `web` - Django + Gunicorn;
+- `db` - PostgreSQL 16;
+- `proxy` - Caddy на HTTP `:80`, static/media и reverse proxy to `web:8000`.
+
+Пример env лежит в `.env.production.example`. Реальный `.env.production`
+игнорируется git и должен содержать server IP/secret/password values.
+
+Подробная инструкция: [`docs/deployment_guide.md`](deployment_guide.md).
+
 ## Что уже работает
 
 - Django project `config`.

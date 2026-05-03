@@ -38,6 +38,8 @@ Implemented capabilities:
 - environment-based Django settings with `.env.example`;
 - local Docker Compose stack with Django, PostgreSQL, static collection, and
   persistent media volume;
+- production-oriented Docker Compose files for HTTP server deployment with
+  Django, PostgreSQL, Caddy, and persistent volumes;
 - GitHub Actions CI for checks and tests.
 
 ## 3. Verification Snapshot
@@ -62,6 +64,7 @@ Latest known local results:
 | Git status | Clean |
 | CI workflow | Configured |
 | Docker Compose local stack | Configured |
+| Production Compose config | Configured |
 
 CI is configured in `.github/workflows/ci.yml` for `push` and `pull_request`
 events. It runs Django check, Ruff check, Ruff format check, and unittest
@@ -110,9 +113,11 @@ Known limitations:
 
 - UI pipeline execution is synchronous;
 - local `.crypto` workflow uses SQLite metadata unless `DATABASE_URL` is set;
-- Docker local stack uses PostgreSQL, but it is not a server deployment setup;
+- Docker local stack uses PostgreSQL;
+- production-oriented compose files are present, but HTTPS is not configured
+  yet;
 - datasets, models, and reports use local filesystem or Docker volume storage;
-- no HTTPS or production deployment setup is included;
+- no HTTPS setup is included;
 - no live trading, order execution, portfolio allocation, or monitoring;
 - no transaction costs, fees, spreads, slippage, or latency modeling;
 - metrics are research signals and pipeline checks, not profitability claims;

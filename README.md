@@ -327,6 +327,7 @@ push and pull request events.
 
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
+- [Deployment guide](docs/deployment_guide.md)
 - [Research report](docs/research_report.md)
 - [Model card](docs/model_card.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
