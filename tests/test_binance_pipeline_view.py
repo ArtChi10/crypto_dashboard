@@ -1,12 +1,11 @@
 import os
-import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
-from django.test import Client
+from django.test import Client, TestCase
 from django.utils import timezone
 
 django.setup()
@@ -14,7 +13,7 @@ django.setup()
 from runs.models import PipelineRun  # noqa: E402
 
 
-class BinancePipelineViewTests(unittest.TestCase):
+class BinancePipelineViewTests(TestCase):
     def setUp(self):
         self.client = Client(HTTP_HOST="localhost")
         self.run_ids = []
@@ -232,7 +231,3 @@ class EarlyFailingBinanceUseCase:
             pipeline_result=None,
             error_message=self.message,
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

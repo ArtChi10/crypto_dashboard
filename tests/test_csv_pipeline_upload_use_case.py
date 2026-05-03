@@ -1,5 +1,4 @@
 import os
-import unittest
 from io import StringIO
 from pathlib import Path
 
@@ -7,6 +6,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
 from django.conf import settings
+from django.test import TestCase
 
 django.setup()
 
@@ -15,7 +15,7 @@ from mlcore.services.csv_pipeline_upload_use_case import CsvPipelineUploadUseCas
 from runs.models import DatasetArtifact, PipelineRun  # noqa: E402
 
 
-class CsvPipelineUploadUseCaseTests(unittest.TestCase):
+class CsvPipelineUploadUseCaseTests(TestCase):
     def setUp(self):
         self.run_ids = []
 
@@ -167,7 +167,3 @@ CSV_CONTENT = "\n".join(
         "2024-01-01 01:00:00,2,3,1,2,101,BTCUSDT",
     ]
 )
-
-
-if __name__ == "__main__":
-    unittest.main()

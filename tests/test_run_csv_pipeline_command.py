@@ -1,6 +1,5 @@
 import os
 import tempfile
-import unittest
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,6 +11,7 @@ import django
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.test import TestCase
 
 django.setup()
 
@@ -24,7 +24,7 @@ from runs.models import (  # noqa: E402
 )
 
 
-class RunCsvPipelineCommandTests(unittest.TestCase):
+class RunCsvPipelineCommandTests(TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.csv_path = Path(self.temp_dir.name) / "input.csv"
@@ -207,7 +207,3 @@ class FailingUploadUseCase:
             pipeline_result=None,
             error_message="pipeline failed",
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

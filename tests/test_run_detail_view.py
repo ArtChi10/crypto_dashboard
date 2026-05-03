@@ -1,12 +1,11 @@
 import os
 import tempfile
-import unittest
 from pathlib import Path
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
-from django.test import Client, override_settings
+from django.test import Client, TestCase, override_settings
 
 django.setup()
 
@@ -19,7 +18,7 @@ from runs.models import (  # noqa: E402
 )
 
 
-class RunDetailViewTests(unittest.TestCase):
+class RunDetailViewTests(TestCase):
     def setUp(self):
         self.client = Client(HTTP_HOST="localhost")
         self.run_ids = []
@@ -239,7 +238,3 @@ class RunDetailViewTests(unittest.TestCase):
                 )
             )
         (reports_dir / "stability.csv").write_text("\n".join(lines), encoding="utf-8")
-
-
-if __name__ == "__main__":
-    unittest.main()

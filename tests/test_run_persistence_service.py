@@ -1,5 +1,4 @@
 import os
-import unittest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -7,6 +6,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
 from django.conf import settings
+from django.test import TestCase
 
 django.setup()
 
@@ -29,7 +29,7 @@ from runs.models import (  # noqa: E402
 DEFAULT_RESULT = object()
 
 
-class RunPersistenceServiceTests(unittest.TestCase):
+class RunPersistenceServiceTests(TestCase):
     def setUp(self):
         self.service = RunPersistenceService()
         self.run_ids = []
@@ -310,7 +310,3 @@ class RecordingAtomic:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.exited = True
-
-
-if __name__ == "__main__":
-    unittest.main()

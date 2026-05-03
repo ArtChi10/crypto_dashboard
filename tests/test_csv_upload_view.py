@@ -1,5 +1,4 @@
 import os
-import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -7,7 +6,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client
+from django.test import Client, TestCase
 from django.utils import timezone
 
 django.setup()
@@ -15,7 +14,7 @@ django.setup()
 from runs.models import DatasetArtifact, MetricSnapshot, ModelArtifact, PipelineRun  # noqa: E402
 
 
-class CsvUploadViewTests(unittest.TestCase):
+class CsvUploadViewTests(TestCase):
     def setUp(self):
         self.client = Client(HTTP_HOST="localhost")
         self.run_ids = []
@@ -315,7 +314,3 @@ CSV_CONTENT = "\n".join(
         "2024-01-01 01:00:00,2,3,1,2,101,BTCUSDT",
     ]
 )
-
-
-if __name__ == "__main__":
-    unittest.main()

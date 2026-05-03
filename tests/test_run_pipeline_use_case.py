@@ -1,10 +1,10 @@
 import os
-import unittest
 from pathlib import Path
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
+from django.test import TestCase
 
 django.setup()
 
@@ -17,7 +17,7 @@ from mlcore.services import (  # noqa: E402
 from runs.models import PipelineRun  # noqa: E402
 
 
-class RunPipelineUseCaseTests(unittest.TestCase):
+class RunPipelineUseCaseTests(TestCase):
     def setUp(self):
         self.run_ids = []
 
@@ -202,7 +202,3 @@ class RecordingPersistenceService:
         self.seen_run = run
         self.seen_result = result
         return self.result
-
-
-if __name__ == "__main__":
-    unittest.main()

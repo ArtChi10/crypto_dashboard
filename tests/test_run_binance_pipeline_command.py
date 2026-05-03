@@ -1,5 +1,4 @@
 import os
-import unittest
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +12,7 @@ import django
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.test import TestCase
 
 django.setup()
 
@@ -25,7 +25,7 @@ from runs.models import (  # noqa: E402
 )
 
 
-class RunBinancePipelineCommandTests(unittest.TestCase):
+class RunBinancePipelineCommandTests(TestCase):
     def setUp(self):
         self.run_ids = []
 
@@ -213,7 +213,3 @@ class FailingBinancePipelineUseCase:
             pipeline_result=None,
             error_message="binance pipeline failed",
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,5 +1,4 @@
 import os
-import unittest
 from pathlib import Path
 
 import pandas as pd
@@ -8,6 +7,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
 from django.conf import settings
+from django.test import TestCase
 
 django.setup()
 
@@ -16,7 +16,7 @@ from mlcore.services.binance_pipeline_use_case import BinancePipelineUseCase  # 
 from runs.models import DatasetArtifact, PipelineRun  # noqa: E402
 
 
-class BinancePipelineUseCaseTests(unittest.TestCase):
+class BinancePipelineUseCaseTests(TestCase):
     def setUp(self):
         self.run_ids = []
 
@@ -203,7 +203,3 @@ class FailingRunPipelineUseCase:
 
     def execute(self, *args, **kwargs):
         raise ValueError(self.message)
-
-
-if __name__ == "__main__":
-    unittest.main()
