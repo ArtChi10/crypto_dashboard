@@ -168,6 +168,32 @@ environment, so task verification commands use:
 .crypto\Scripts\python.exe ...
 ```
 
+## Docker Local Stack
+
+The project also includes a local Docker Compose stack with Django and
+PostgreSQL. It is intended for local containerized testing, not server
+deployment.
+
+```powershell
+docker compose build
+docker compose up
+```
+
+Open:
+
+```text
+http://localhost:8000/
+```
+
+Stop the stack:
+
+```powershell
+docker compose down
+```
+
+Docker uses PostgreSQL through `DATABASE_URL`. The local `.crypto` workflow
+continues to use SQLite unless `DATABASE_URL` is set in the shell environment.
+
 ## Offline Demo Dataset
 
 The repository includes a small deterministic synthetic OHLCV dataset for

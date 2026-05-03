@@ -48,6 +48,32 @@ Defaults в `config/settings.py` подходят для local development и т
 `testserver`. Пример значений хранится в `.env.example`; реальный `.env`
 игнорируется git и не должен коммититься.
 
+## Docker local stack
+
+Для локального контейнерного запуска есть Docker Compose stack:
+
+```powershell
+docker compose build
+docker compose up
+```
+
+После старта открыть:
+
+```text
+http://localhost:8000/
+```
+
+Остановить stack:
+
+```powershell
+docker compose down
+```
+
+Docker stack использует PostgreSQL через `DATABASE_URL`, выполняет migrations,
+собирает static files через `collectstatic` и запускает Django через Gunicorn.
+Локальный `.crypto` workflow по-прежнему использует SQLite, если
+`DATABASE_URL` не задан в shell environment.
+
 ## Что уже работает
 
 - Django project `config`.

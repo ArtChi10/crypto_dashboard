@@ -31,6 +31,9 @@ These files and directories should be committed and visible:
 - `requirements.txt`;
 - `pyproject.toml`;
 - `.env.example`;
+- `Dockerfile`;
+- `docker-compose.yml`;
+- `.dockerignore`;
 - `.github/workflows/ci.yml`;
 - `docs/`;
 - `data/samples/`;
@@ -48,6 +51,7 @@ These files and directories must remain local or ignored:
 - `.crypto/`;
 - `.venv/`;
 - `local_notes/`;
+- Docker volumes and container runtime state;
 - generated `media/` artifacts:
   - `media/datasets/raw/`;
   - `media/datasets/processed/`;

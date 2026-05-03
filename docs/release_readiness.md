@@ -36,6 +36,8 @@ Implemented capabilities:
   - walk-forward evaluation command;
   - feature ablation command;
 - environment-based Django settings with `.env.example`;
+- local Docker Compose stack with Django, PostgreSQL, static collection, and
+  persistent media volume;
 - GitHub Actions CI for checks and tests.
 
 ## 3. Verification Snapshot
@@ -59,6 +61,7 @@ Latest known local results:
 | Unit tests | Passed |
 | Git status | Clean |
 | CI workflow | Configured |
+| Docker Compose local stack | Configured |
 
 CI is configured in `.github/workflows/ci.yml` for `push` and `pull_request`
 events. It runs Django check, Ruff check, Ruff format check, and unittest
@@ -106,9 +109,10 @@ Current public documentation:
 Known limitations:
 
 - UI pipeline execution is synchronous;
-- SQLite stores metadata;
-- datasets, models, and reports use local filesystem storage;
-- no production deployment setup is included;
+- local `.crypto` workflow uses SQLite metadata unless `DATABASE_URL` is set;
+- Docker local stack uses PostgreSQL, but it is not a server deployment setup;
+- datasets, models, and reports use local filesystem or Docker volume storage;
+- no HTTPS or production deployment setup is included;
 - no live trading, order execution, portfolio allocation, or monitoring;
 - no transaction costs, fees, spreads, slippage, or latency modeling;
 - metrics are research signals and pipeline checks, not profitability claims;
@@ -126,5 +130,5 @@ Potential future work:
 - confidence intervals or metric variance across folds;
 - drift monitoring and data quality alerts;
 - dashboard integration for walk-forward and ablation outputs;
-- Docker or deployment packaging if needed;
+- server deployment packaging if needed;
 - optional background task queue for longer runs.
