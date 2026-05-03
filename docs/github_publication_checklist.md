@@ -35,6 +35,7 @@ These files and directories should be committed and visible:
 - `docker-compose.yml`;
 - `.dockerignore`;
 - `.github/workflows/ci.yml`;
+- `.github/workflows/deploy.yml`;
 - `docs/`;
 - `data/samples/`;
 - `docs/assets/screenshots/`;
@@ -47,6 +48,7 @@ These files and directories should be committed and visible:
 These files and directories must remain local or ignored:
 
 - `.env`;
+- `.env.production`;
 - `db.sqlite3`;
 - `.crypto/`;
 - `.venv/`;
@@ -83,6 +85,8 @@ After pushing, open the repository page and verify:
 - sample dataset and EDA links work;
 - CI workflow appears under GitHub Actions;
 - CI starts on the push;
+- deployment workflow appears under GitHub Actions if present;
+- deployment secrets are configured before enabling SSH deploy;
 - there are no broken image links.
 
 ## 5. No Misleading Claims
@@ -100,7 +104,16 @@ Before publishing, verify public docs:
 Run the standard public wording search used in the project verification steps.
 Expected result: no matches.
 
-## 6. Optional After Push
+## 6. Deployment Secrets
+
+Before enabling the SSH deployment workflow, configure GitHub Secrets for the
+deployment host, SSH port, deploy user, server repository path, healthcheck URL,
+and private deploy key.
+
+Keep `.env.production` server-only. It must not be committed, and the deploy
+workflow must not print or store real secret values in repository files.
+
+## 7. Optional After Push
 
 Optional repository polish:
 

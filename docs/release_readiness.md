@@ -40,7 +40,8 @@ Implemented capabilities:
   persistent media volume;
 - production-oriented Docker Compose files for HTTP server deployment with
   Django, PostgreSQL, Caddy, and persistent volumes;
-- GitHub Actions CI for checks and tests.
+- GitHub Actions CI for checks and tests;
+- optional GitHub Actions SSH deployment workflow for the configured server.
 
 ## 3. Verification Snapshot
 
@@ -65,10 +66,17 @@ Latest known local results:
 | CI workflow | Configured |
 | Docker Compose local stack | Configured |
 | Production Compose config | Configured |
+| SSH CD workflow | Configured |
+| HTTPS | Pending |
+| Background jobs | Pending |
 
 CI is configured in `.github/workflows/ci.yml` for `push` and `pull_request`
-events. It runs Django check, Ruff check, Ruff format check, and unittest
-discovery on Python 3.12.
+events. It runs Django check, Ruff check, Ruff format check, and the Django test
+runner on Python 3.12.
+
+The optional deployment workflow is configured in `.github/workflows/deploy.yml`.
+It repeats checks and, after success on `main`, can update the configured server
+over SSH using GitHub Secrets.
 
 ## 4. Reproducible Demo Paths
 
@@ -114,8 +122,9 @@ Known limitations:
 - UI pipeline execution is synchronous;
 - local `.crypto` workflow uses SQLite metadata unless `DATABASE_URL` is set;
 - Docker local stack uses PostgreSQL;
-- production-oriented compose files are present, but HTTPS is not configured
-  yet;
+- production-oriented compose files are present;
+- SSH deployment workflow is available, but server secrets must be configured in
+  GitHub before use;
 - datasets, models, and reports use local filesystem or Docker volume storage;
 - no HTTPS setup is included;
 - no live trading, order execution, portfolio allocation, or monitoring;
@@ -135,5 +144,6 @@ Potential future work:
 - confidence intervals or metric variance across folds;
 - drift monitoring and data quality alerts;
 - dashboard integration for walk-forward and ablation outputs;
-- server deployment packaging if needed;
+- HTTPS/domain setup for the server;
+- backup procedure for PostgreSQL and media volumes;
 - optional background task queue for longer runs.

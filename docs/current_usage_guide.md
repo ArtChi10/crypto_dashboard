@@ -36,11 +36,9 @@ GitHub Actions CI запускает тот же базовый набор пр�
 
 Django settings читают optional environment variables:
 
-```text
-DJANGO_SECRET_KEY=replace-me
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
-```
+- `DJANGO_SECRET_KEY` - local/project secret key value;
+- `DJANGO_DEBUG` - `True` or `False`;
+- `DJANGO_ALLOWED_HOSTS` - comma-separated host list.
 
 Defaults в `config/settings.py` подходят для local development и тестов:
 `DJANGO_SECRET_KEY` получает placeholder `dev-insecure-local-key`,

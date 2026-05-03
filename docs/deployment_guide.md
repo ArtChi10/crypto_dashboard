@@ -38,21 +38,12 @@ Create a production environment file from the example:
 cp .env.production.example .env.production
 ```
 
-Edit `.env.production`:
+Edit `.env.production` using `.env.production.example` as the template. It must
+define the Django secret key, debug mode, allowed hosts, PostgreSQL database
+name, PostgreSQL user, PostgreSQL password, and `DATABASE_URL`.
 
-```text
-DJANGO_SECRET_KEY=<long-random-secret>
-DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=<server-ip-or-domain>
-
-POSTGRES_DB=crypto_dashboard
-POSTGRES_USER=crypto_dashboard
-POSTGRES_PASSWORD=<strong-password>
-DATABASE_URL=postgresql://crypto_dashboard:<strong-password>@db:5432/crypto_dashboard
-```
-
-Keep `POSTGRES_PASSWORD` and the password inside `DATABASE_URL` in sync. Do not
-commit `.env.production`.
+Keep the PostgreSQL password and the password inside `DATABASE_URL` in sync. Do
+not commit `.env.production`; it is server-only configuration.
 
 ## Start The Stack
 
@@ -120,6 +111,58 @@ Then check:
 docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f web
 ```
+
+## GitHub Actions SSH Deploy
+
+The repository includes an optional GitHub Actions workflow for deploying over
+SSH after checks pass on `main`:
+
+```text
+.github/workflows/deploy.yml
+```
+
+Required GitHub Secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `DEPLOY_HOST` | Server host or IP. The current server uses `195.54.178.243`. |
+| `DEPLOY_PORT` | External SSH port. The current server uses `16470`. |
+| `DEPLOY_USER` | SSH user. The current server uses `crypto`. |
+| `DEPLOY_PATH` | Repository path on the server. The current server uses `/home/crypto/crypto_dashboard`. |
+| `DEPLOY_HEALTHCHECK_URL` | Healthcheck URL from inside the server. The current stack uses `http://127.0.0.1/`. |
+| `DEPLOY_SSH_KEY` | SSH deploy key material for the deploy user. Store it only as a GitHub Secret. |
+
+The workflow:
+
+- runs Django check, Ruff check, Ruff format check, and Django tests;
+- starts an SSH agent with the configured deploy key;
+- adds the server host key through `ssh-keyscan` using the configured SSH port;
+- enters the server repository path;
+- fetches `origin/main`;
+- resets the server working tree to `origin/main`;
+- rebuilds and starts the production Docker Compose stack;
+- prints `docker compose` service status;
+- runs a server-local healthcheck.
+
+The server-local healthcheck uses the internal URL configured in
+`DEPLOY_HEALTHCHECK_URL`. The public site is currently reachable through the
+provider forwarding path at:
+
+```text
+http://195.54.178.243:16471/
+```
+
+The workflow does not create or modify `.env.production`. That file must remain
+on the server and stay out of git.
+
+To create a dedicated deploy key locally:
+
+```powershell
+ssh-keygen -t ed25519 -C "github-actions-crypto-dashboard-deploy" -f .\crypto_dashboard_deploy_key
+```
+
+Add the public key to `/home/crypto/.ssh/authorized_keys` on the server. Add the
+secret key content to the GitHub Secret named `DEPLOY_SSH_KEY`.
 
 ## HTTPS Note
 

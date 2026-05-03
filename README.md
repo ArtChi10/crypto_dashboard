@@ -151,11 +151,10 @@ http://127.0.0.1:8000/
 
 Optional Django environment variables:
 
-```text
-DJANGO_SECRET_KEY=replace-me
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
-```
+- `DJANGO_SECRET_KEY`: set a local development secret when you do not want to
+  use the fallback placeholder;
+- `DJANGO_DEBUG`: set to `True` or `False`;
+- `DJANGO_ALLOWED_HOSTS`: comma-separated host list, for example local hostnames.
 
 Local development defaults are defined in `config/settings.py`, so the project
 can run without a `.env` file. Use `.env.example` as a reference if you want to
@@ -193,6 +192,19 @@ docker compose down
 
 Docker uses PostgreSQL through `DATABASE_URL`. The local `.crypto` workflow
 continues to use SQLite unless `DATABASE_URL` is set in the shell environment.
+
+## Deployment
+
+The repository includes:
+
+- GitHub Actions CI for Django checks, Ruff checks, and Django tests;
+- an optional SSH deployment workflow in `.github/workflows/deploy.yml`;
+- production-oriented Docker Compose files for Django, PostgreSQL, Caddy,
+  persistent media, and collected static files.
+
+The SSH deployment workflow is configured through GitHub Secrets and is intended
+for the server setup described in the [deployment guide](docs/deployment_guide.md).
+The server-only `.env.production` file stays on the server and is not committed.
 
 ## Offline Demo Dataset
 
@@ -307,13 +319,16 @@ as files.
 ```
 
 GitHub Actions CI runs the same Django check, Ruff checks, and Django test
-runner on push and pull request events.
+runner on push and pull request events. The optional SSH deployment workflow can
+update the configured Docker Compose server after successful checks on `main`.
 
 ## Current Limitations
 
 - No async/background queue yet; UI pipeline runs are synchronous.
 - Local filesystem artifact storage only.
-- No production deployment setup.
+- HTTPS is not configured yet.
+- Server deployment is Docker Compose based; no managed platform setup is
+  included.
 - No live trading, order execution, asset allocation logic, fees, slippage, or
   transaction cost modeling.
 - High metrics on a short historical period can be misleading.
