@@ -46,6 +46,7 @@ This project is not:
   - walk-forward fold generation;
   - walk-forward evaluation CLI;
   - feature ablation CLI.
+- Local script for freezing real Binance OHLCV datasets with a SHA256 manifest.
 
 ## Screenshots
 
@@ -239,6 +240,22 @@ Generic equivalent:
 python manage.py run_csv_pipeline --csv data/samples/sample_ohlcv.csv --symbol BTCUSDT --interval 1h --start-date 2024-01-01 --end-date 2024-01-10 --target-horizon 3
 ```
 
+## Real Data Benchmark Dataset
+
+For larger research benchmarks, freeze Binance OHLCV data locally instead of
+depending on a fresh live request for every run:
+
+```powershell
+.crypto\Scripts\python.exe scripts\freeze_binance_dataset.py --symbol BTCUSDT --interval 1h --start-date 2025-01-01 --end-date 2025-07-01 --output-dir data\real
+```
+
+The script saves a parquet dataset and a manifest JSON with request parameters,
+row count, timestamp range, missing-value counts, duplicate timestamps, and the
+dataset SHA256. `data/real/` is ignored by git, so generated real-market data
+stays local.
+
+See the [real data dataset manifest guide](docs/real_data_dataset_manifest.md).
+
 ## Running Pipelines
 
 CSV through UI:
@@ -347,6 +364,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Deployment guide](docs/deployment_guide.md)
 - [Research report](docs/research_report.md)
 - [Model card](docs/model_card.md)
+- [Real data dataset manifest guide](docs/real_data_dataset_manifest.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)

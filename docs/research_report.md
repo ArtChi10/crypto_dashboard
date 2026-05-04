@@ -65,6 +65,14 @@ A compact EDA report for the committed sample dataset is available at
 missing values, numeric summaries, returns distribution, and target balance
 after the current feature/target pipeline.
 
+For real-data benchmarks, the project now uses an ignored frozen dataset flow:
+`scripts/freeze_binance_dataset.py` downloads Binance Spot OHLCV candles into
+`data/real/` and writes a manifest JSON with request parameters, row count,
+timestamp range, missing-value counts, duplicate timestamp count, and SHA256.
+The recommended first benchmark is `BTCUSDT`, `1h`, `2025-01-01` to
+`2025-07-01`. The manifest guide is
+[`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
+
 ## 5. Target Definition
 
 The current target is:
@@ -217,6 +225,11 @@ confusion matrices, and period stability output.
 
 This sample experiment is a reproducibility and pipeline sanity check only. It
 does not provide evidence of real market predictability.
+
+A real-data benchmark should start by freezing the Binance dataset and checking
+its manifest before running walk-forward, ablation, stability, or Forecast
+Replay experiments. The frozen input improves reproducibility, but it still does
+not make metrics evidence of trading profitability.
 
 ## 12. Known Limitations
 

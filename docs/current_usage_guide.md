@@ -16,6 +16,8 @@ CSV через `/upload/`, хранить ссылки на dataset/model/report
 
 Research report skeleton: [`docs/research_report.md`](research_report.md).
 Model card: [`docs/model_card.md`](model_card.md).
+Real data dataset manifest guide:
+[`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
 
 Главное правило хранения:
 
@@ -448,6 +450,38 @@ Management command `run_binance_pipeline` скачивает OHLCV candles че�
 завершится `CommandError` до создания run. При успехе выводятся `run id`,
 `run status` и detail URL вида `/runs/<id>/`. При ошибке после создания run его
 статус станет `failed`, а ошибка попадет в `PipelineRun.error_message`.
+
+## Как заморозить real Binance dataset для research benchmark
+
+Для больших research runs лучше использовать frozen dataset, а не каждый раз
+делать live-запрос к Binance. Script:
+
+```text
+scripts/freeze_binance_dataset.py
+```
+
+скачивает OHLCV через `BinanceMarketDataProvider`, сохраняет parquet в ignored
+folder `data/real/` и рядом пишет manifest JSON с параметрами запроса, row count,
+timestamp range, missing values, duplicate timestamp count и SHA256 файла.
+
+Recommended first benchmark:
+
+```powershell
+.crypto\Scripts\python.exe scripts\freeze_binance_dataset.py --symbol BTCUSDT --interval 1h --start-date 2025-01-01 --end-date 2025-07-01 --output-dir data\real
+```
+
+Smoke command на коротком периоде:
+
+```powershell
+.crypto\Scripts\python.exe scripts\freeze_binance_dataset.py --symbol BTCUSDT --interval 1h --start-date 2025-01-01 --end-date 2025-01-10 --output-dir data\real
+```
+
+`data/real/` добавлен в `.gitignore`, поэтому generated parquet и manifest не
+попадают в commit. Публичное описание schema manifest лежит в
+[`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
+
+Важно: это real market data для research benchmark. Оно не доказывает trading
+performance и не является основанием для live trading decisions.
 
 ## Как запустить research evaluation из CLI
 

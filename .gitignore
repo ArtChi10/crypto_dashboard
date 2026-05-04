@@ -13,6 +13,7 @@ local_notes/
 
 # Local manual/test artifacts
 manual_upload_test.csv
+data/real/
 tmp_cli_check/
 tmp_research_check/
 tmp_full_pipeline_check/
