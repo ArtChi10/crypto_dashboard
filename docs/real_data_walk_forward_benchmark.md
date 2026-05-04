@@ -41,6 +41,9 @@ Final feature/target rows after pipeline preparation: `200`.
 | train_window | 120 |
 | test_window | 24 |
 | step | 24 |
+| bootstrap_samples | 1000 |
+| confidence_level | 0.9500 |
+| random_state | 42 |
 | random_shuffle | no |
 | test_fold_tuning | no |
 
@@ -59,11 +62,26 @@ folds are counted and kept in the CSV outputs.
 
 ![Walk-forward summary](assets/real_data_walk_forward/walk_forward_summary.png)
 
-| trainer | folds_total | folds_failed | folds_success | accuracy_mean | accuracy_std | f1_mean | f1_std | roc_auc_mean | roc_auc_std | precision_mean | recall_mean |
+| trainer | folds_total | folds_failed | folds_success | accuracy_mean | accuracy_std | accuracy_ci_lower | accuracy_ci_upper | precision_mean | precision_ci_lower | precision_ci_upper | recall_mean | recall_ci_lower | recall_ci_upper | f1_mean | f1_std | f1_ci_lower | f1_ci_upper | roc_auc_mean | roc_auc_std | roc_auc_ci_lower | roc_auc_ci_upper |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dummy | 3 | 0 | 3 | 0.4167 | 0.1816 | 0.2917 | 0.6250 | 0.2083 | 0.0000 | 0.3333 | 0.6667 | 0.0000 | 1.0000 | 0.3172 | 0.2758 | 0.0000 | 0.5000 | 0.5000 | 0.0000 | 0.5000 | 0.5000 |
+| baseline | 3 | 0 | 3 | 0.4583 | 0.1443 | 0.2917 | 0.5417 | 0.3067 | 0.2000 | 0.4286 | 0.5972 | 0.1250 | 1.0000 | 0.3757 | 0.1953 | 0.1538 | 0.5217 | 0.6153 | 0.2074 | 0.3828 | 0.7815 |
+| catboost | 3 | 0 | 3 | 0.4444 | 0.0867 | 0.3750 | 0.5417 | 0.3009 | 0.2500 | 0.3750 | 0.4742 | 0.3333 | 0.7143 | 0.3510 | 0.0500 | 0.3000 | 0.4000 | 0.5567 | 0.1743 | 0.3555 | 0.6593 |
+
+## Confidence Intervals
+
+Bootstrap confidence intervals are estimated over fold-level metric
+values. Because this smoke benchmark has only a few folds per model,
+the intervals should be read as uncertainty indicators rather than
+strong evidence of model superiority or statistical significance.
+
+![F1 confidence intervals](assets/real_data_walk_forward/walk_forward_confidence_intervals.png)
+
+| trainer | folds_success | accuracy_mean | accuracy_ci | precision_mean | precision_ci | recall_mean | recall_ci | f1_mean | f1_ci | roc_auc_mean | roc_auc_ci |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| dummy | 3 | 0 | 3 | 0.4167 | 0.1816 | 0.3172 | 0.2758 | 0.5000 | 0.0000 | 0.2083 | 0.6667 |
-| baseline | 3 | 0 | 3 | 0.4583 | 0.1443 | 0.3757 | 0.1953 | 0.6153 | 0.2074 | 0.3067 | 0.5972 |
-| catboost | 3 | 0 | 3 | 0.4444 | 0.0867 | 0.3510 | 0.0500 | 0.5567 | 0.1743 | 0.3009 | 0.4742 |
+| dummy | 3 | 0.4167 | [0.2917, 0.6250] | 0.2083 | [0.0000, 0.3333] | 0.6667 | [0.0000, 1.0000] | 0.3172 | [0.0000, 0.5000] | 0.5000 | [0.5000, 0.5000] |
+| baseline | 3 | 0.4583 | [0.2917, 0.5417] | 0.3067 | [0.2000, 0.4286] | 0.5972 | [0.1250, 1.0000] | 0.3757 | [0.1538, 0.5217] | 0.6153 | [0.3828, 0.7815] |
+| catboost | 3 | 0.4444 | [0.3750, 0.5417] | 0.3009 | [0.2500, 0.3750] | 0.4742 | [0.3333, 0.7143] | 0.3510 | [0.3000, 0.4000] | 0.5567 | [0.3555, 0.6593] |
 
 ## Fold-Level Results
 
@@ -123,5 +141,5 @@ deployable market edge.
 Regenerate this report with:
 
 ```powershell
-.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost
+.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost --bootstrap-samples 1000 --confidence-level 0.95 --random-state 42
 ```

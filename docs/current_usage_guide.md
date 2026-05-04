@@ -496,12 +496,16 @@ TargetBuilder`, запускает trainers `dummy`, `baseline`, `catboost`, с�
 fold CSV, plots и markdown report:
 
 ```powershell
-.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost
+.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost --bootstrap-samples 1000 --confidence-level 0.95 --random-state 42
 ```
 
 Report `docs/real_data_walk_forward_benchmark.md` показывает manifest/hash,
-walk-forward setup, summary metrics и fold-level outputs. Это stability check
-directional classification metrics, не trading/performance claim.
+walk-forward setup, summary metrics, bootstrap confidence intervals и
+fold-level outputs. `--bootstrap-samples`, `--confidence-level` и
+`--random-state` управляют CI. На коротком smoke dataset с малым числом folds
+intervals являются только uncertainty signal, не statistical proof. Это
+stability check directional classification metrics, не trading/performance
+claim.
 
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.

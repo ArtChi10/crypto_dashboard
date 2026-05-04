@@ -33,6 +33,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import matplotlib  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from mlcore.evaluation.statistics import bootstrap_mean_ci  # noqa: E402
 from mlcore.evaluation.walk_forward import WalkForwardEvaluationService  # noqa: E402
 from mlcore.features import FeatureBuilder  # noqa: E402
 from mlcore.preprocessing import DataCleaner  # noqa: E402
@@ -52,12 +53,22 @@ SUMMARY_COLUMNS = (
     "folds_success",
     "accuracy_mean",
     "accuracy_std",
+    "accuracy_ci_lower",
+    "accuracy_ci_upper",
+    "precision_mean",
+    "precision_ci_lower",
+    "precision_ci_upper",
+    "recall_mean",
+    "recall_ci_lower",
+    "recall_ci_upper",
     "f1_mean",
     "f1_std",
+    "f1_ci_lower",
+    "f1_ci_upper",
     "roc_auc_mean",
     "roc_auc_std",
-    "precision_mean",
-    "recall_mean",
+    "roc_auc_ci_lower",
+    "roc_auc_ci_upper",
 )
 TRAINER_FACTORIES = {
     "dummy": DummyBaselineTrainer,
@@ -92,8 +103,18 @@ def main() -> int:
         step=args.step,
         output_dir=output_dir,
     )
-    summary = _summary_table(fold_results)
-    plot_paths = _build_plots(fold_results, summary, output_dir)
+    summary = _summary_table(
+        fold_results,
+        n_bootstrap=args.bootstrap_samples,
+        confidence_level=args.confidence_level,
+        random_state=args.random_state,
+    )
+    plot_paths = _build_plots(
+        fold_results,
+        summary,
+        output_dir,
+        confidence_level=args.confidence_level,
+    )
     _write_report(
         output_doc=output_doc,
         manifest=manifest,
@@ -128,6 +149,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--test-window", type=int, default=24)
     parser.add_argument("--step", type=int, default=24)
     parser.add_argument("--trainers", default="dummy,baseline,catboost")
+    parser.add_argument("--bootstrap-samples", type=int, default=1000)
+    parser.add_argument("--confidence-level", type=float, default=0.95)
+    parser.add_argument("--random-state", type=int, default=42)
     return parser.parse_args()
 
 
@@ -197,7 +221,12 @@ def _run_benchmarks(
     return results
 
 
-def _summary_table(fold_results: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def _summary_table(
+    fold_results: dict[str, pd.DataFrame],
+    n_bootstrap: int,
+    confidence_level: float,
+    random_state: int,
+) -> pd.DataFrame:
     rows = []
     for trainer_name, result in fold_results.items():
         failed_mask = _failed_mask(result)
@@ -209,9 +238,15 @@ def _summary_table(fold_results: dict[str, pd.DataFrame]) -> pd.DataFrame:
         }
         for metric_name in METRIC_COLUMNS:
             metric_values = pd.to_numeric(result[metric_name], errors="coerce").dropna()
-            row[f"{metric_name}_mean"] = (
-                float(metric_values.mean()) if not metric_values.empty else None
+            ci = bootstrap_mean_ci(
+                metric_values,
+                n_bootstrap=n_bootstrap,
+                confidence_level=confidence_level,
+                random_state=random_state,
             )
+            row[f"{metric_name}_mean"] = ci["mean"]
+            row[f"{metric_name}_ci_lower"] = ci["ci_lower"]
+            row[f"{metric_name}_ci_upper"] = ci["ci_upper"]
             if metric_name in {"accuracy", "f1", "roc_auc"}:
                 row[f"{metric_name}_std"] = (
                     float(metric_values.std()) if len(metric_values) > 1 else None
@@ -231,15 +266,22 @@ def _build_plots(
     fold_results: dict[str, pd.DataFrame],
     summary: pd.DataFrame,
     output_dir: Path,
+    confidence_level: float,
 ) -> dict[str, Path]:
     plot_paths = {
         "f1": output_dir / "walk_forward_f1_by_fold.png",
         "roc_auc": output_dir / "walk_forward_roc_auc_by_fold.png",
         "summary": output_dir / "walk_forward_summary.png",
+        "confidence_intervals": output_dir / "walk_forward_confidence_intervals.png",
     }
     _plot_metric_by_fold(fold_results, "f1", plot_paths["f1"])
     _plot_metric_by_fold(fold_results, "roc_auc", plot_paths["roc_auc"])
     _plot_summary(summary, plot_paths["summary"])
+    _plot_confidence_intervals(
+        summary,
+        plot_paths["confidence_intervals"],
+        confidence_level=confidence_level,
+    )
     return plot_paths
 
 
@@ -309,6 +351,42 @@ def _plot_summary(summary: pd.DataFrame, path: Path) -> None:
     _save_figure(figure, path)
 
 
+def _plot_confidence_intervals(
+    summary: pd.DataFrame,
+    path: Path,
+    confidence_level: float,
+) -> None:
+    figure, axis = plt.subplots(figsize=(8.5, 4.2))
+    metric_frame = summary.loc[
+        :,
+        ["trainer", "f1_mean", "f1_ci_lower", "f1_ci_upper"],
+    ].copy()
+    for column in ["f1_mean", "f1_ci_lower", "f1_ci_upper"]:
+        metric_frame[column] = pd.to_numeric(metric_frame[column], errors="coerce")
+    metric_frame = metric_frame.dropna()
+
+    if metric_frame.empty:
+        axis.text(0.5, 0.5, "No F1 confidence intervals", ha="center", va="center")
+    else:
+        means = metric_frame["f1_mean"]
+        lower_errors = (means - metric_frame["f1_ci_lower"]).clip(lower=0)
+        upper_errors = (metric_frame["f1_ci_upper"] - means).clip(lower=0)
+        axis.bar(
+            metric_frame["trainer"],
+            means,
+            yerr=[lower_errors, upper_errors],
+            capsize=7,
+            color="#175cd3",
+            alpha=0.86,
+        )
+    axis.set_title(f"Bootstrap {confidence_level:.0%} confidence intervals for mean F1")
+    axis.set_xlabel("trainer")
+    axis.set_ylabel("mean f1")
+    axis.set_ylim(0, 1.05)
+    axis.grid(axis="y", color="#d9dee7", linewidth=0.8, alpha=0.8)
+    _save_figure(figure, path)
+
+
 def _save_figure(figure: Any, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.tight_layout()
@@ -326,6 +404,10 @@ def _write_report(
     args: argparse.Namespace,
 ) -> None:
     output_doc.parent.mkdir(parents=True, exist_ok=True)
+    confidence_plot_path = _relative_markdown_path(
+        plot_paths["confidence_intervals"],
+        output_doc,
+    )
     markdown = [
         "# Real Data Walk-Forward Benchmark",
         "",
@@ -360,6 +442,9 @@ def _write_report(
                 ("train_window", args.train_window),
                 ("test_window", args.test_window),
                 ("step", args.step),
+                ("bootstrap_samples", args.bootstrap_samples),
+                ("confidence_level", args.confidence_level),
+                ("random_state", args.random_state),
                 ("random_shuffle", "no"),
                 ("test_fold_tuning", "no"),
             ],
@@ -381,6 +466,17 @@ def _write_report(
         f"![Walk-forward summary]({_relative_markdown_path(plot_paths['summary'], output_doc)})",
         "",
         _dataframe_to_markdown(_format_summary(summary)),
+        "",
+        "## Confidence Intervals",
+        "",
+        "Bootstrap confidence intervals are estimated over fold-level metric",
+        "values. Because this smoke benchmark has only a few folds per model,",
+        "the intervals should be read as uncertainty indicators rather than",
+        "strong evidence of model superiority or statistical significance.",
+        "",
+        f"![F1 confidence intervals]({confidence_plot_path})",
+        "",
+        _dataframe_to_markdown(_format_confidence_intervals(summary)),
         "",
         "## Fold-Level Results",
         "",
@@ -440,11 +536,31 @@ def _format_summary(summary: pd.DataFrame) -> pd.DataFrame:
     metric_columns = [
         column
         for column in formatted.columns
-        if column.endswith("_mean") or column.endswith("_std")
+        if column.endswith("_mean")
+        or column.endswith("_std")
+        or column.endswith("_ci_lower")
+        or column.endswith("_ci_upper")
     ]
     for column in metric_columns:
         formatted[column] = formatted[column].map(_format_float)
     return formatted
+
+
+def _format_confidence_intervals(summary: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for _, row in summary.iterrows():
+        formatted_row = {
+            "trainer": row["trainer"],
+            "folds_success": row["folds_success"],
+        }
+        for metric_name in METRIC_COLUMNS:
+            formatted_row[f"{metric_name}_mean"] = _format_float(row[f"{metric_name}_mean"])
+            formatted_row[f"{metric_name}_ci"] = (
+                f"[{_format_float(row[f'{metric_name}_ci_lower'])}, "
+                f"{_format_float(row[f'{metric_name}_ci_upper'])}]"
+            )
+        rows.append(formatted_row)
+    return pd.DataFrame(rows)
 
 
 def _fold_level_sections(fold_results: dict[str, pd.DataFrame], output_doc: Path) -> str:
@@ -551,7 +667,10 @@ def _reproducibility_command(args: argparse.Namespace) -> str:
         f"--train-window {args.train_window} "
         f"--test-window {args.test_window} "
         f"--step {args.step} "
-        f"--trainers {args.trainers}"
+        f"--trainers {args.trainers} "
+        f"--bootstrap-samples {args.bootstrap_samples} "
+        f"--confidence-level {args.confidence_level} "
+        f"--random-state {args.random_state}"
     )
 
 
