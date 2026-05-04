@@ -88,6 +88,12 @@ intervals are uncertainty indicators, not statistical proof of model
 superiority. The benchmark is a stability check for directional classification
 metrics, not a trading or profitability claim.
 
+The companion real-data regime analysis is available at
+[`docs/real_data_regime_analysis.md`](real_data_regime_analysis.md). It collects
+walk-forward test-fold predictions for a selected trainer, labels rows by
+volatility and trend regimes, and compares error patterns by regime. This is
+diagnostic error analysis, not a strategy.
+
 ## 5. Target Definition
 
 The current target is:
@@ -333,6 +339,12 @@ manifest:
 
 ```powershell
 .crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost --bootstrap-samples 1000 --confidence-level 0.95 --random-state 42
+```
+
+Regenerate the real-data regime analysis:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_regime_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_regime_analysis.md --output-dir docs\assets\real_data_regime_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01
 ```
 
 Inspect results:

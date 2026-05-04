@@ -507,6 +507,16 @@ intervals являются только uncertainty signal, не statistical pro
 stability check directional classification metrics, не trading/performance
 claim.
 
+Для regime diagnostics по volatility/trend buckets используйте:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_regime_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_regime_analysis.md --output-dir docs\assets\real_data_regime_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01
+```
+
+Report `docs/real_data_regime_analysis.md` показывает row-level predictions,
+metrics by volatility regime, metrics by trend regime и error counts. Threshold
+`--trend-threshold` является heuristic diagnostic setting, не trading rule.
+
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.
 

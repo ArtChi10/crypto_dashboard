@@ -1,5 +1,6 @@
 from mlcore.evaluation.ablation import FeatureAblationService
 from mlcore.evaluation.evaluator import Evaluator
+from mlcore.evaluation.regime import RegimeAnalysisService
 from mlcore.evaluation.stability import PeriodStabilityAnalysisService, PeriodStabilityRow
 from mlcore.evaluation.statistics import bootstrap_mean_ci
 from mlcore.evaluation.walk_forward import (
@@ -13,6 +14,7 @@ __all__ = [
     "FeatureAblationService",
     "PeriodStabilityAnalysisService",
     "PeriodStabilityRow",
+    "RegimeAnalysisService",
     "bootstrap_mean_ci",
     "WalkForwardEvaluationService",
     "WalkForwardFold",

@@ -272,6 +272,13 @@ CatBoost trainers:
 See the
 [real data walk-forward benchmark](docs/real_data_walk_forward_benchmark.md),
 including bootstrap confidence intervals over fold-level metrics.
+For regime-level diagnostics, run:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_regime_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_regime_analysis.md --output-dir docs\assets\real_data_regime_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01
+```
+
+See the [real data regime analysis](docs/real_data_regime_analysis.md).
 
 ## Running Pipelines
 
@@ -384,6 +391,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Real data dataset manifest guide](docs/real_data_dataset_manifest.md)
 - [Real data EDA report](docs/real_data_eda.md)
 - [Real data walk-forward benchmark](docs/real_data_walk_forward_benchmark.md)
+- [Real data regime analysis](docs/real_data_regime_analysis.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)
