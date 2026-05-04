@@ -1,0 +1,2 @@
+total_rows,correct_count,error_count,error_rate,true_positive_count,true_negative_count,false_positive_count,false_negative_count,false_positive_rate,false_negative_rate,avg_confidence_correct,avg_confidence_wrong
+72,33,39,0.5416666666666666,14,19,29,10,0.6041666666666666,0.4166666666666667,0.8332764834490165,0.8252037203086892

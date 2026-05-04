@@ -517,6 +517,17 @@ Report `docs/real_data_regime_analysis.md` показывает row-level predic
 metrics by volatility regime, metrics by trend regime и error counts. Threshold
 `--trend-threshold` является heuristic diagnostic setting, не trading rule.
 
+Для детального error analysis по walk-forward predictions используйте:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_error_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_error_analysis.md --output-dir docs\assets\real_data_error_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01 --top-n 10
+```
+
+Report `docs/real_data_error_analysis.md` показывает false positives, false
+negatives, high-confidence mistakes, confidence-bin error rates и error rates by
+volatility/trend regime. High-confidence mistakes полезны как model-risk
+examples, но не являются торговыми сигналами.
+
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.
 

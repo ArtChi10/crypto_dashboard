@@ -1,4 +1,5 @@
 from mlcore.evaluation.ablation import FeatureAblationService
+from mlcore.evaluation.error_analysis import PredictionErrorAnalysisService
 from mlcore.evaluation.evaluator import Evaluator
 from mlcore.evaluation.regime import RegimeAnalysisService
 from mlcore.evaluation.stability import PeriodStabilityAnalysisService, PeriodStabilityRow
@@ -14,6 +15,7 @@ __all__ = [
     "FeatureAblationService",
     "PeriodStabilityAnalysisService",
     "PeriodStabilityRow",
+    "PredictionErrorAnalysisService",
     "RegimeAnalysisService",
     "bootstrap_mean_ci",
     "WalkForwardEvaluationService",

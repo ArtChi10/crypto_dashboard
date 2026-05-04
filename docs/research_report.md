@@ -94,6 +94,13 @@ walk-forward test-fold predictions for a selected trainer, labels rows by
 volatility and trend regimes, and compares error patterns by regime. This is
 diagnostic error analysis, not a strategy.
 
+The real-data error analysis is available at
+[`docs/real_data_error_analysis.md`](real_data_error_analysis.md). It breaks
+walk-forward predictions into true positives, true negatives, false positives,
+and false negatives, then inspects high-confidence mistakes, confidence-bin
+error rates, and errors by volatility/trend regime. High-confidence errors are
+model-risk examples, not trading signals.
+
 ## 5. Target Definition
 
 The current target is:
@@ -345,6 +352,12 @@ Regenerate the real-data regime analysis:
 
 ```powershell
 .crypto\Scripts\python.exe scripts\run_real_data_regime_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_regime_analysis.md --output-dir docs\assets\real_data_regime_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01
+```
+
+Regenerate the real-data error analysis:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_error_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_error_analysis.md --output-dir docs\assets\real_data_error_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01 --top-n 10
 ```
 
 Inspect results:

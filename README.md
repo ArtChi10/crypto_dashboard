@@ -279,6 +279,13 @@ For regime-level diagnostics, run:
 ```
 
 See the [real data regime analysis](docs/real_data_regime_analysis.md).
+For deeper walk-forward prediction error analysis, run:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_error_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_error_analysis.md --output-dir docs\assets\real_data_error_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01 --top-n 10
+```
+
+See the [real data error analysis](docs/real_data_error_analysis.md).
 
 ## Running Pipelines
 
@@ -392,6 +399,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Real data EDA report](docs/real_data_eda.md)
 - [Real data walk-forward benchmark](docs/real_data_walk_forward_benchmark.md)
 - [Real data regime analysis](docs/real_data_regime_analysis.md)
+- [Real data error analysis](docs/real_data_error_analysis.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)
