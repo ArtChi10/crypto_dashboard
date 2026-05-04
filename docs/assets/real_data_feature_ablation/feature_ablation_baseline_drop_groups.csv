@@ -1,0 +1,8 @@
+experiment,mode,feature_group,included_feature_count,excluded_group,accuracy,precision,recall,f1,roc_auc,error_message
+all_features,drop_groups,all_features,19,,0.35,0.3275862068965517,1.0,0.4935064935064935,0.7715019255455713,
+without_price_raw,drop_groups,price_raw,15,price_raw,0.35,0.3275862068965517,1.0,0.4935064935064935,0.7702182284980745,
+without_returns,drop_groups,returns,15,returns,0.35,0.3275862068965517,1.0,0.4935064935064935,0.711168164313222,
+without_moving_average,drop_groups,moving_average,15,moving_average,0.36666666666666664,0.3333333333333333,1.0,0.5,0.7715019255455713,
+without_volatility,drop_groups,volatility,17,volatility,0.31666666666666665,0.31666666666666665,1.0,0.4810126582278481,0.7946084724005135,
+without_volume,drop_groups,volume,16,volume,0.35,0.3275862068965517,1.0,0.4935064935064935,0.7766367137355584,
+without_candle,drop_groups,candle,17,candle,0.31666666666666665,0.31666666666666665,1.0,0.4810126582278481,0.7689345314505777,

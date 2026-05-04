@@ -101,6 +101,12 @@ and false negatives, then inspects high-confidence mistakes, confidence-bin
 error rates, and errors by volatility/trend regime. High-confidence errors are
 model-risk examples, not trading signals.
 
+The real-data feature ablation report is available at
+[`docs/real_data_feature_ablation.md`](real_data_feature_ablation.md). It uses a
+chronological train/test split on the frozen dataset and compares what happens
+when engineered OHLCV feature groups are removed. Ablation is diagnostic feature
+analysis; it does not imply profitability.
+
 ## 5. Target Definition
 
 The current target is:
@@ -358,6 +364,12 @@ Regenerate the real-data error analysis:
 
 ```powershell
 .crypto\Scripts\python.exe scripts\run_real_data_error_analysis.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_error_analysis.md --output-dir docs\assets\real_data_error_analysis --trainer baseline --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trend-window 24 --trend-threshold 0.01 --top-n 10
+```
+
+Regenerate the real-data feature ablation report:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_feature_ablation.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_feature_ablation.md --output-dir docs\assets\real_data_feature_ablation --trainer baseline --target-horizon 3 --train-ratio 0.7 --mode drop_groups
 ```
 
 Inspect results:

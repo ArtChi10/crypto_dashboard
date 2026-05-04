@@ -286,6 +286,13 @@ For deeper walk-forward prediction error analysis, run:
 ```
 
 See the [real data error analysis](docs/real_data_error_analysis.md).
+For feature-group ablation on the frozen dataset, run:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_feature_ablation.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_feature_ablation.md --output-dir docs\assets\real_data_feature_ablation --trainer baseline --target-horizon 3 --train-ratio 0.7 --mode drop_groups
+```
+
+See the [real data feature ablation report](docs/real_data_feature_ablation.md).
 
 ## Running Pipelines
 
@@ -400,6 +407,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Real data walk-forward benchmark](docs/real_data_walk_forward_benchmark.md)
 - [Real data regime analysis](docs/real_data_regime_analysis.md)
 - [Real data error analysis](docs/real_data_error_analysis.md)
+- [Real data feature ablation report](docs/real_data_feature_ablation.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)

@@ -528,6 +528,18 @@ negatives, high-confidence mistakes, confidence-bin error rates и error rates b
 volatility/trend regime. High-confidence mistakes полезны как model-risk
 examples, но не являются торговыми сигналами.
 
+Для feature-group ablation на frozen dataset используйте:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_feature_ablation.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_feature_ablation.md --output-dir docs\assets\real_data_feature_ablation --trainer baseline --target-horizon 3 --train-ratio 0.7 --mode drop_groups
+```
+
+Report `docs/real_data_feature_ablation.md` показывает, как меняются metrics
+при удалении групп признаков `price_raw`, `returns`, `moving_average`,
+`volatility`, `volume`, `candle`. Script также поддерживает `--trainer catboost`
+с быстрыми research params и `--mode only_groups`, если нужно проверить группы
+по отдельности.
+
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.
 
