@@ -242,9 +242,9 @@ class ForecastReplayReportService:
         "close",
         "future_close",
         "predicted_direction",
-        "predicted_probability",
         "is_correct",
     )
+    OPTIONAL_REPLAY_COLUMNS = ("predicted_probability",)
 
     def build(
         self,
@@ -261,7 +261,10 @@ class ForecastReplayReportService:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         history = self._time_sorted(history_df, required_columns=self.REQUIRED_HISTORY_COLUMNS)
-        replay = self._time_sorted(replay_df, required_columns=self.REQUIRED_REPLAY_COLUMNS)
+        replay_columns = self.REQUIRED_REPLAY_COLUMNS + tuple(
+            column for column in self.OPTIONAL_REPLAY_COLUMNS if column in replay_df.columns
+        )
+        replay = self._time_sorted(replay_df, required_columns=replay_columns)
 
         figure, axis = plt.subplots(figsize=(8, 4.2))
         axis.plot(
@@ -280,7 +283,7 @@ class ForecastReplayReportService:
         )
         self._plot_prediction_markers(axis, replay)
 
-        axis.set_title("Forecast replay")
+        axis.set_title(self._summary_title(replay))
         axis.set_xlabel("timestamp")
         axis.set_ylabel("close")
         axis.grid(axis="y", color="#d9dee7", linewidth=0.8, alpha=0.8)
@@ -308,22 +311,22 @@ class ForecastReplayReportService:
                 row["timestamp"],
                 row["close"],
                 marker=marker,
-                s=72,
+                s=112,
                 color=color,
                 edgecolors="#ffffff",
-                linewidths=0.7,
+                linewidths=1.0,
                 label=label,
                 zorder=3,
             )
-            probability = row["predicted_probability"]
+            probability = row.get("predicted_probability")
             if pd.notna(probability):
                 axis.annotate(
-                    f"{float(probability):.2f}",
+                    f"P(up)={float(probability):.2f}",
                     (row["timestamp"], row["close"]),
                     textcoords="offset points",
-                    xytext=(0, 8),
+                    xytext=(0, 10),
                     ha="center",
-                    fontsize=8,
+                    fontsize=7.5,
                     color="#344054",
                 )
 
@@ -332,6 +335,19 @@ class ForecastReplayReportService:
         direction = "predicted up" if predicted_up else "predicted down"
         outcome = "correct" if is_correct else "incorrect"
         return f"{direction} {outcome}"
+
+    @classmethod
+    def _summary_title(cls, replay: pd.DataFrame) -> str:
+        total_count = len(replay)
+        correct_count = int(replay["is_correct"].map(cls._bool_value).sum())
+        hit_rate = correct_count / total_count * 100 if total_count else 0.0
+        return f"Forecast replay: {correct_count}/{total_count} correct, hit rate {hit_rate:.1f}%"
+
+    @staticmethod
+    def _bool_value(value: Any) -> bool:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "correct"}
+        return bool(value)
 
     @staticmethod
     def _time_sorted(df: pd.DataFrame, required_columns: tuple[str, ...]) -> pd.DataFrame:

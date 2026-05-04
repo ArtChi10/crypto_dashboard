@@ -194,6 +194,68 @@ class RunDetailViewTests(TestCase):
         self.assertNotIn('href="/media/../reports/stability.csv"', html)
         self.assertNotIn("model_0", html)
 
+    def test_forecast_replay_preview_renders_summary_and_rows(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        self._write_forecast_replay_csv()
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.FORECAST_REPLAY_TABLE,
+            file_path="reports/forecast_replay_table.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Forecast Replay", html)
+        self.assertIn("3 / 5", html)
+        self.assertIn("60.0%", html)
+        self.assertIn("0.6200", html)
+        self.assertIn("timestamp", html)
+        self.assertIn("predicted", html)
+        self.assertIn("actual", html)
+        self.assertIn("result", html)
+        self.assertIn("correct", html)
+        self.assertIn("wrong", html)
+        self.assertIn("3.0000%", html)
+        self.assertIn('href="/media/reports/forecast_replay_table.csv"', html)
+
+    def test_forecast_replay_preview_missing_file_does_not_crash(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.FORECAST_REPLAY_TABLE,
+            file_path="reports/missing_forecast_replay_table.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Forecast Replay", html)
+        self.assertIn("Forecast replay preview unavailable", html)
+
+    def test_forecast_replay_preview_does_not_read_unsafe_paths(self):
+        run = self._create_run(status=PipelineRun.Status.SUCCESS)
+        self._write_forecast_replay_csv()
+        ReportArtifact.objects.create(
+            run=run,
+            report_type=ReportArtifact.ReportType.FORECAST_REPLAY_TABLE,
+            file_path="../reports/forecast_replay_table.csv",
+        )
+
+        with override_settings(MEDIA_ROOT=self.media_root):
+            response = self.client.get(f"/runs/{run.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Forecast replay preview unavailable", html)
+        self.assertIn("../reports/forecast_replay_table.csv", html)
+        self.assertNotIn('href="/media/../reports/forecast_replay_table.csv"', html)
+        self.assertNotIn("60.0%", html)
+
     def test_empty_states_still_render(self):
         run = self._create_run(status=PipelineRun.Status.CREATED)
 
@@ -241,3 +303,34 @@ class RunDetailViewTests(TestCase):
                 )
             )
         (reports_dir / "stability.csv").write_text("\n".join(lines), encoding="utf-8")
+
+    def _write_forecast_replay_csv(self):
+        reports_dir = self.media_root / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        lines = [
+            ",".join(
+                [
+                    "timestamp",
+                    "close",
+                    "future_close",
+                    "actual_direction",
+                    "predicted_direction",
+                    "predicted_probability",
+                    "is_correct",
+                    "actual_change",
+                    "actual_change_pct",
+                    "predicted_label",
+                    "actual_label",
+                    "result_label",
+                ]
+            ),
+            "2024-01-01 00:00:00,100,103,1,1,0.8,True,3,3.0,up,up,correct",
+            "2024-01-01 01:00:00,100,98,0,1,0.7,False,-2,-2.0,up,down,wrong",
+            "2024-01-01 02:00:00,100,99,0,0,0.3,True,-1,-1.0,down,down,correct",
+            "2024-01-01 03:00:00,100,104,1,0,0.9,False,4,4.0,down,up,wrong",
+            "2024-01-01 04:00:00,100,101,1,1,0.4,True,1,1.0,up,up,correct",
+        ]
+        (reports_dir / "forecast_replay_table.csv").write_text(
+            "\n".join(lines),
+            encoding="utf-8",
+        )

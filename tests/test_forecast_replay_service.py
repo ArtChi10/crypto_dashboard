@@ -28,6 +28,11 @@ class ForecastReplayServiceTests(unittest.TestCase):
                 "predicted_direction",
                 "predicted_probability",
                 "is_correct",
+                "actual_change",
+                "actual_change_pct",
+                "predicted_label",
+                "actual_label",
+                "result_label",
             ],
         )
         self.assertEqual(len(result), 5)
@@ -40,6 +45,26 @@ class ForecastReplayServiceTests(unittest.TestCase):
         self.assertEqual(
             result["is_correct"].tolist(),
             (result["predicted_direction"] == result["actual_direction"]).tolist(),
+        )
+        expected_actual_change = result["future_close"] - result["close"]
+        pd.testing.assert_series_equal(
+            result["actual_change"],
+            expected_actual_change,
+            check_names=False,
+        )
+        pd.testing.assert_series_equal(
+            result["actual_change_pct"],
+            expected_actual_change / result["close"] * 100,
+            check_names=False,
+        )
+        self.assertEqual(result["predicted_label"].tolist(), ["up", "down", "up", "down", "up"])
+        self.assertEqual(
+            result["actual_label"].tolist(),
+            ["up" if value == 1 else "down" for value in result["actual_direction"]],
+        )
+        self.assertEqual(
+            result["result_label"].tolist(),
+            ["correct" if value else "wrong" for value in result["is_correct"]],
         )
 
     def test_build_replay_does_not_send_leakage_columns_to_model(self):

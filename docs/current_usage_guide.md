@@ -266,7 +266,8 @@ http://127.0.0.1:8000/binance/
 
 Выберите symbol, interval, date range, target horizon и модели. Optional
 `Enable forecast replay` докачивает будущие candles после `end_date`, строит
-CSV/PNG replay reports и показывает их на `/runs/<id>/`.
+CSV/PNG replay reports и показывает их на `/runs/<id>/` вместе с summary и
+preview table.
 Страница также содержит короткую contextual help-подсказку: что такое Binance
 Spot OHLCV candles, примеры `BTCUSDT`/`1h`, смысл `target_horizon` и какие
 artifacts появятся после запуска. Replay показывает predicted up/down против
@@ -359,8 +360,9 @@ http://127.0.0.1:8000/binance/
 в порядке `catboost -> baseline -> dummy`, строит replay table через
 `ForecastReplayService`, сохраняет `forecast_replay_table` CSV и
 `forecast_replay` PNG. `RunPersistenceService` сохраняет оба файла как
-`ReportArtifact`, поэтому PNG появляется в существующей report gallery на
-`/runs/<id>/`, а CSV доступен как link.
+`ReportArtifact`, поэтому `/runs/<id>/` показывает отдельный Forecast Replay
+summary block, CSV preview, PNG в существующей report gallery и link на полный
+CSV.
 
 Если обе модели выключены, форма покажет ошибку и pipeline не запустится. Если
 ошибка произошла после создания run, страница перенаправит на detail page, где
@@ -658,15 +660,22 @@ Replay output columns:
 
 ```text
 timestamp, close, future_close, actual_direction, predicted_direction,
-predicted_probability, is_correct
+predicted_probability, is_correct, actual_change, actual_change_pct,
+predicted_label, actual_label, result_label
 ```
 
 Если model поддерживает `predict_proba`, service сохраняет probability класса 1
 в `predicted_probability`; иначе там будет `None`.
+`actual_change` и `actual_change_pct` показывают, насколько реально изменилась
+цена между replay close и `future_close`; labels `up`/`down`/`correct`/`wrong`
+делают CSV и UI preview читаемыми без ручной расшифровки 0/1.
 
 `ForecastReplayReportService` строит PNG-график: historical close, replay close
-и markers predicted up/down с correct/incorrect цветом. В Binance UI эти outputs
-сохраняются как `forecast_replay` для PNG и `forecast_replay_table` для CSV.
+и крупные markers predicted up/down с correct/incorrect цветом. Title содержит
+`correct/total` и hit rate, а probability labels показываются как `P(up)=...`,
+если model их дала. В Binance UI эти outputs сохраняются как `forecast_replay`
+для PNG и `forecast_replay_table` для CSV. Run detail дополнительно показывает
+hit rate, average probability и первые replay rows из safe CSV preview.
 
 Важно: это replay/backtest visualization для classification model, а не live
 price forecasting и не trading signal.

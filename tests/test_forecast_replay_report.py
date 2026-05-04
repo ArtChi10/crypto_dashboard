@@ -33,6 +33,18 @@ class ForecastReplayReportServiceTests(unittest.TestCase):
                 path=self.base_dir / "empty.png",
             )
 
+    def test_build_creates_png_without_probability_column(self):
+        path = self.base_dir / "reports" / "forecast_replay_no_probability.png"
+
+        result_path = ForecastReplayReportService().build(
+            history_df=self._history(),
+            replay_df=self._replay().drop(columns=["predicted_probability"]),
+            path=path,
+        )
+
+        self.assertEqual(result_path, path)
+        self.assert_png(path)
+
     @staticmethod
     def _history():
         return pd.DataFrame(

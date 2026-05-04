@@ -187,7 +187,9 @@ the Binance pipeline downloads a future candle window after `end_date`, uses the
 trained model selected in `catboost -> baseline -> dummy` order, and saves a
 replay table plus PNG report as persisted `ReportArtifact` records. Its purpose
 is replay/backtest visualization of classification decisions, not live price
-forecasting.
+forecasting. The replay table includes direction labels, correctness labels,
+actual price change, and actual percentage change so the run detail page can
+show a compact reality-check summary.
 
 ## 11. Current Reports
 
@@ -201,7 +203,9 @@ The MVP currently creates PNG reports for:
 - forecast replay table as CSV;
 - forecast replay plot as PNG.
 
-The run detail page displays report links and renders safe PNG reports inline.
+The run detail page displays report links, renders safe PNG reports inline, and
+shows a Forecast Replay preview block with correct/total, hit rate, average
+probability when available, and the first replay rows from the CSV.
 
 ## Current Reproducible Experiment
 
@@ -228,8 +232,8 @@ Known limitations:
 - walk-forward persistence, UI, and report integration are not implemented yet;
 - feature ablation exists as a standalone research utility, but ablation reports
   and pipeline integration are not implemented yet;
-- forecast replay is integrated with the Binance UI, but it remains a simplified
-  synchronous replay/backtest visualization;
+- forecast replay is integrated with the Binance UI and run detail preview, but
+  it remains a simplified synchronous replay/backtest visualization;
 - period stability is currently based on the single holdout test segment, not on
   rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
@@ -247,7 +251,8 @@ Planned research steps:
 - integrate walk-forward evaluation with reporting and experiment persistence;
 - stability analysis by symbol and market regime;
 - integrate feature ablation with reporting and experiment persistence;
-- extend Forecast Replay with richer UI controls and replay table previews;
+- extend Forecast Replay with richer UI controls and more detailed replay
+  diagnostics;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
 - probability calibration;
 - out-of-sample degradation analysis;

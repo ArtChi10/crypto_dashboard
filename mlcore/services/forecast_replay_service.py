@@ -19,6 +19,11 @@ class ForecastReplayService:
         "predicted_direction",
         "predicted_probability",
         "is_correct",
+        "actual_change",
+        "actual_change_pct",
+        "predicted_label",
+        "actual_label",
+        "result_label",
     )
     FORBIDDEN_FEATURE_COLUMNS = frozenset(
         {
@@ -27,6 +32,11 @@ class ForecastReplayService:
             "predicted_direction",
             "predicted_probability",
             "is_correct",
+            "actual_change",
+            "actual_change_pct",
+            "predicted_label",
+            "actual_label",
+            "result_label",
             "target",
             "timestamp",
             "symbol",
@@ -82,6 +92,11 @@ class ForecastReplayService:
             }
         )
         result["is_correct"] = result["predicted_direction"] == result["actual_direction"]
+        result["actual_change"] = result["future_close"] - result["close"]
+        result["actual_change_pct"] = result["actual_change"] / result["close"] * 100
+        result["predicted_label"] = np.where(result["predicted_direction"] == 1, "up", "down")
+        result["actual_label"] = np.where(result["actual_direction"] == 1, "up", "down")
+        result["result_label"] = np.where(result["is_correct"], "correct", "wrong")
 
         return result.loc[:, self.OUTPUT_COLUMNS]
 

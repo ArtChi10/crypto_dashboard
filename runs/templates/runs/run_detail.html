@@ -274,6 +274,82 @@
         </section>
     {% endif %}
 
+    {% if forecast_replay %}
+        <section class="section" aria-label="Forecast Replay">
+            <div class="section-heading-row">
+                <h2>Forecast Replay</h2>
+                {% if forecast_replay.file_url %}
+                    <a class="file-link" href="{{ forecast_replay.file_url }}">Open full CSV</a>
+                {% endif %}
+            </div>
+            <div class="help-panel help-panel--compact">
+                <p>Forecast Replay compares predicted up/down directions with the actual future close movement. It is a replay/backtest view, not a price forecast or trading signal.</p>
+            </div>
+            {% if forecast_replay.preview_unavailable %}
+                <p class="empty-state">
+                    Forecast replay preview unavailable.
+                    {% if forecast_replay.file_url %}
+                        <a class="file-link" href="{{ forecast_replay.file_url }}">Open full CSV</a>
+                    {% else %}
+                        <code>{{ forecast_replay.artifact.file_path }}</code>
+                    {% endif %}
+                </p>
+            {% elif forecast_replay.rows %}
+                <div class="replay-summary">
+                    <div class="replay-summary__item">
+                        <span>Correct</span>
+                        <strong>{{ forecast_replay.correct_count }} / {{ forecast_replay.total_count }}</strong>
+                    </div>
+                    <div class="replay-summary__item">
+                        <span>Hit rate</span>
+                        <strong>{{ forecast_replay.hit_rate }}%</strong>
+                    </div>
+                    {% if forecast_replay.avg_probability %}
+                        <div class="replay-summary__item">
+                            <span>Avg probability</span>
+                            <strong>{{ forecast_replay.avg_probability }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="table-wrap table-wrap--compact">
+                    <table class="table--compact replay-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">timestamp</th>
+                                <th scope="col">close</th>
+                                <th scope="col">future_close</th>
+                                <th scope="col">predicted</th>
+                                <th scope="col">actual</th>
+                                <th scope="col">probability</th>
+                                <th scope="col">result</th>
+                                <th scope="col">actual_change_pct</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in forecast_replay.rows %}
+                                <tr>
+                                    <td>{{ row.timestamp }}</td>
+                                    <td class="metric-value">{{ row.close }}</td>
+                                    <td class="metric-value">{{ row.future_close }}</td>
+                                    <td>{{ row.predicted }}</td>
+                                    <td>{{ row.actual }}</td>
+                                    <td class="metric-value">{{ row.probability }}</td>
+                                    <td><span class="result-label {{ row.result_class }}">{{ row.result }}</span></td>
+                                    <td class="metric-value">{{ row.actual_change_pct }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if forecast_replay.truncated %}
+                    <p class="muted stability-note">Showing first 20 rows. Open the full CSV for all replay points.</p>
+                {% endif %}
+            {% else %}
+                <p class="empty-state">Forecast replay table is empty.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
     <section class="section" aria-label="Report artifacts">
         <h2>ReportArtifact</h2>
         <div class="help-panel help-panel--compact">

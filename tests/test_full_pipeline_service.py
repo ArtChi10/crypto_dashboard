@@ -254,6 +254,11 @@ class FullPipelineServiceTests(unittest.TestCase):
                 "predicted_direction",
                 "predicted_probability",
                 "is_correct",
+                "actual_change",
+                "actual_change_pct",
+                "predicted_label",
+                "actual_label",
+                "result_label",
             ],
         )
         self.assertEqual(catboost_model.seen_columns, feature_columns)

@@ -19,6 +19,8 @@ STABILITY_PREVIEW_COLUMNS = (
     "f1",
     "roc_auc",
 )
+FORECAST_REPLAY_TABLE_REPORT_TYPE = "forecast_replay_table"
+FORECAST_REPLAY_PREVIEW_LIMIT = 20
 
 
 def run_list(request):
@@ -55,6 +57,7 @@ def run_detail(request, pk):
             "metric_snapshots": [_metric_snapshot_presenter(metric) for metric in metric_snapshots],
             "report_artifacts": report_presenters,
             "stability_table": _stability_table_preview(report_artifacts),
+            "forecast_replay": _forecast_replay_preview(report_artifacts),
         },
     )
 
@@ -156,6 +159,140 @@ def _stability_row_presenter(row):
         "f1": _format_csv_metric(row.get("f1")),
         "roc_auc": _format_csv_metric(row.get("roc_auc")),
     }
+
+
+def _forecast_replay_preview(report_artifacts):
+    replay_artifact = next(
+        (
+            artifact
+            for artifact in report_artifacts
+            if artifact.report_type == FORECAST_REPLAY_TABLE_REPORT_TYPE
+        ),
+        None,
+    )
+    if replay_artifact is None:
+        return None
+
+    preview = {
+        "artifact": replay_artifact,
+        "file_url": _media_url_for_path(replay_artifact.file_path),
+        "rows": [],
+        "truncated": False,
+        "preview_unavailable": False,
+        "correct_count": None,
+        "total_count": None,
+        "hit_rate": None,
+        "avg_probability": None,
+    }
+    csv_path = _safe_media_csv_path(replay_artifact.file_path)
+    if csv_path is None:
+        preview["preview_unavailable"] = True
+        return preview
+    if not csv_path.is_file():
+        preview["preview_unavailable"] = True
+        return preview
+
+    try:
+        with csv_path.open(newline="", encoding="utf-8") as csv_file:
+            all_rows = list(csv.DictReader(csv_file))
+    except (OSError, csv.Error, UnicodeDecodeError):
+        preview["preview_unavailable"] = True
+        return preview
+
+    preview["truncated"] = len(all_rows) > FORECAST_REPLAY_PREVIEW_LIMIT
+    preview["rows"] = [
+        _forecast_replay_row_presenter(row) for row in all_rows[:FORECAST_REPLAY_PREVIEW_LIMIT]
+    ]
+    _populate_forecast_replay_summary(preview, all_rows)
+    return preview
+
+
+def _populate_forecast_replay_summary(preview, rows):
+    total_count = len(rows)
+    correct_count = sum(1 for row in rows if _forecast_replay_row_is_correct(row))
+    probabilities = [
+        probability
+        for probability in (_optional_csv_float(row.get("predicted_probability")) for row in rows)
+        if probability is not None
+    ]
+
+    preview["total_count"] = total_count
+    preview["correct_count"] = correct_count
+    preview["hit_rate"] = f"{correct_count / total_count * 100:.1f}" if total_count else None
+    if probabilities:
+        preview["avg_probability"] = f"{sum(probabilities) / len(probabilities):.4f}"
+
+
+def _forecast_replay_row_presenter(row):
+    result_label = _forecast_replay_result_label(row)
+    return {
+        "timestamp": row.get("timestamp") or "-",
+        "close": _format_csv_metric(row.get("close")),
+        "future_close": _format_csv_metric(row.get("future_close")),
+        "predicted": row.get("predicted_label") or _direction_label(row.get("predicted_direction")),
+        "actual": row.get("actual_label") or _direction_label(row.get("actual_direction")),
+        "probability": _format_csv_metric(row.get("predicted_probability")),
+        "result": result_label,
+        "result_class": (
+            "result-label--correct" if result_label == "correct" else "result-label--wrong"
+        ),
+        "actual_change_pct": _format_forecast_replay_percent(row),
+    }
+
+
+def _forecast_replay_result_label(row):
+    result_label = str(row.get("result_label") or "").strip().lower()
+    if result_label in {"correct", "wrong"}:
+        return result_label
+    return "correct" if _forecast_replay_row_is_correct(row) else "wrong"
+
+
+def _forecast_replay_row_is_correct(row):
+    result_label = str(row.get("result_label") or "").strip().lower()
+    if result_label in {"correct", "wrong"}:
+        return result_label == "correct"
+
+    is_correct = row.get("is_correct")
+    if is_correct not in (None, ""):
+        return _csv_bool(is_correct)
+
+    return str(row.get("predicted_direction")) == str(row.get("actual_direction"))
+
+
+def _direction_label(value):
+    normalized = str(value).strip()
+    if normalized == "1":
+        return "up"
+    if normalized == "0":
+        return "down"
+    return "-"
+
+
+def _format_forecast_replay_percent(row):
+    value = _optional_csv_float(row.get("actual_change_pct"))
+    if value is None:
+        close = _optional_csv_float(row.get("close"))
+        future_close = _optional_csv_float(row.get("future_close"))
+        if close not in (None, 0) and future_close is not None:
+            value = (future_close - close) / close * 100
+    if value is None:
+        return "-"
+    return f"{value:.4f}%"
+
+
+def _optional_csv_float(value):
+    if value in (None, "", "None", "nan", "NaN"):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _csv_bool(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "correct"}
 
 
 def _media_url_for_path(file_path):

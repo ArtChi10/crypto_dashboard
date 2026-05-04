@@ -338,16 +338,24 @@ Replay table содержит:
 - `actual_direction`;
 - `predicted_direction`;
 - `predicted_probability`;
-- `is_correct`.
+- `is_correct`;
+- `actual_change`;
+- `actual_change_pct`;
+- `predicted_label`;
+- `actual_label`;
+- `result_label`.
 
 `ForecastReplayReportService` строит PNG-график: historical close, replay close
-и markers, где видно predicted up/down и correct/incorrect. Это
-replay/backtest visualization, не live price forecasting.
+и крупные markers, где видно predicted up/down и correct/incorrect. Title
+сразу показывает `correct/total` и hit rate; если probability есть, replay-точки
+подписываются `P(up)=...`. Это replay/backtest visualization, не live price
+forecasting.
 
 В Binance UI это подключено как optional checkbox. Если replay включен,
 `/binance/` докачивает future candles после `end_date`, а `FullPipelineService`
 создает `forecast_replay_table` CSV и `forecast_replay` PNG. Run detail page
-показывает эти файлы через обычные `ReportArtifact` links/gallery.
+показывает отдельный Forecast Replay summary, preview table, полный CSV link и
+PNG через обычную `ReportArtifact` gallery.
 
 ## Что делает Evaluator
 
@@ -723,7 +731,9 @@ OHLCV candles, показывает примеры `BTCUSDT` и `1h`, описы
 Если включен Forecast Replay, use case докачивает future OHLCV candles после
 `end_date`. Дальше `FullPipelineService` использует уже обученную модель,
 строит replay table/plot, а `RunPersistenceService` сохраняет их как
-`ReportArtifact`. Это показывает classification reality check, не прогноз цены.
+`ReportArtifact`. Run detail читает safe `forecast_replay_table` CSV из
+`MEDIA_ROOT/reports`, считает hit rate, average probability и показывает первые
+rows. Это показывает classification reality check, не прогноз цены.
 
 Если обе модели выключены, форма показывает validation error и use case не
 запускается. Если ошибка случилась после создания run, пользователь попадает на
