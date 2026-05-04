@@ -78,6 +78,13 @@ The first real-data EDA report is available at
 Binance dataset and summarizes schema/data quality, price and volume behavior,
 returns, rolling volatility, and target balance across horizons `1,3,6,12`.
 
+The first real-data walk-forward benchmark is available at
+[`docs/real_data_walk_forward_benchmark.md`](real_data_walk_forward_benchmark.md).
+It applies the same `DataCleaner -> FeatureBuilder -> TargetBuilder` path to the
+frozen dataset, evaluates `dummy`, `baseline`, and `catboost` across sequential
+time folds, and publishes fold CSV plus summary plots. It is a stability check
+for directional classification metrics, not a trading or profitability claim.
+
 ## 5. Target Definition
 
 The current target is:
@@ -232,10 +239,11 @@ This sample experiment is a reproducibility and pipeline sanity check only. It
 does not provide evidence of real market predictability.
 
 A real-data benchmark should start by freezing the Binance dataset and checking
-its manifest, then reviewing the real-data EDA report before running
-walk-forward, ablation, stability, or Forecast Replay experiments. The frozen
-input and EDA improve reproducibility, but they still do not make metrics
-evidence of trading profitability.
+its manifest, then reviewing the real-data EDA report, then running the
+walk-forward benchmark before ablation, stability, or Forecast Replay
+experiments. The frozen input, EDA, and fold-by-fold benchmark improve
+reproducibility, but they still do not make metrics evidence of trading
+profitability.
 
 ## 12. Known Limitations
 
@@ -316,6 +324,13 @@ CatBoost uses lighter research defaults in this command, but it can still be
 slower than the simpler trainers. Fold-level one-class training failures are
 recorded as `error_message` rows by the evaluation services instead of weakening
 trainer validation.
+
+Regenerate the real-data walk-forward benchmark from a frozen raw dataset and
+manifest:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost
+```
 
 Inspect results:
 

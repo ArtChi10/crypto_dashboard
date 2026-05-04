@@ -490,6 +490,19 @@ Report `docs/real_data_eda.md` показывает manifest, schema/data qualit
 price/volume overview, returns distribution, rolling volatility и target balance
 по horizons `1,3,6,12`.
 
+После EDA можно запустить первый real-data walk-forward benchmark на frozen
+dataset. Script применяет тот же `DataCleaner -> FeatureBuilder ->
+TargetBuilder`, запускает trainers `dummy`, `baseline`, `catboost`, сохраняет
+fold CSV, plots и markdown report:
+
+```powershell
+.crypto\Scripts\python.exe scripts\run_real_data_walk_forward_benchmark.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_walk_forward_benchmark.md --output-dir docs\assets\real_data_walk_forward --target-horizon 3 --train-window 120 --test-window 24 --step 24 --trainers dummy,baseline,catboost
+```
+
+Report `docs/real_data_walk_forward_benchmark.md` показывает manifest/hash,
+walk-forward setup, summary metrics и fold-level outputs. Это stability check
+directional classification metrics, не trading/performance claim.
+
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.
 
