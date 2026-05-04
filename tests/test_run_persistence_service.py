@@ -175,6 +175,25 @@ class RunPersistenceServiceTests(TestCase):
             {ModelArtifact.ModelType.DUMMY, ModelArtifact.ModelType.BASELINE},
         )
 
+    def test_save_full_pipeline_result_creates_forecast_replay_reports(self):
+        run = self._create_run()
+        result = self._make_result(include_forecast_replay=True)
+
+        saved = self.service.save_full_pipeline_result(run, result)
+
+        replay_table = ReportArtifact.objects.get(
+            run=run,
+            report_type=ReportArtifact.ReportType.FORECAST_REPLAY_TABLE,
+        )
+        replay_plot = ReportArtifact.objects.get(
+            run=run,
+            report_type=ReportArtifact.ReportType.FORECAST_REPLAY,
+        )
+        self.assertEqual(replay_table.file_path, "reports/forecast_replay_table.csv")
+        self.assertEqual(replay_plot.file_path, "reports/forecast_replay.png")
+        self.assertEqual(saved.forecast_replay_table_report_artifact, replay_table)
+        self.assertEqual(saved.forecast_replay_report_artifact, replay_plot)
+
     def test_save_full_pipeline_result_uses_transaction_atomic(self):
         run = self._create_run()
         result = self._make_result()
@@ -214,6 +233,7 @@ class RunPersistenceServiceTests(TestCase):
         dummy_result=DEFAULT_RESULT,
         baseline_result=DEFAULT_RESULT,
         catboost_result=DEFAULT_RESULT,
+        include_forecast_replay=False,
     ) -> FullPipelineResult:
         if dummy_result is DEFAULT_RESULT:
             dummy_result = DummyTrainingResult(
@@ -290,6 +310,16 @@ class RunPersistenceServiceTests(TestCase):
             / "reports"
             / "stability_table.csv",
             stability_plot_report_path=Path(settings.MEDIA_ROOT) / "reports" / "stability_plot.png",
+            forecast_replay_table_path=(
+                Path(settings.MEDIA_ROOT) / "reports" / "forecast_replay_table.csv"
+                if include_forecast_replay
+                else None
+            ),
+            forecast_replay_report_path=(
+                Path(settings.MEDIA_ROOT) / "reports" / "forecast_replay.png"
+                if include_forecast_replay
+                else None
+            ),
             feature_importance_report_path=(
                 Path(settings.MEDIA_ROOT) / "reports" / "feature_importance.png"
                 if catboost_result is not None

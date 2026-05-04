@@ -76,6 +76,73 @@ class BinancePipelineUseCaseTests(TestCase):
         pd.testing.assert_frame_equal(pipeline_use_case.seen_raw_df, provider.raw_df)
         self.assertTrue(pipeline_use_case.train_baseline)
         self.assertFalse(pipeline_use_case.train_catboost)
+        self.assertIsNone(pipeline_use_case.future_df)
+        self.assertFalse(pipeline_use_case.enable_forecast_replay)
+        self.assertEqual(pipeline_use_case.replay_steps, 5)
+
+    def test_execute_with_forecast_replay_downloads_future_window(self):
+        history_df = self._raw_df()
+        future_df = self._future_df()
+        provider = RecordingMarketDataProvider([history_df, future_df])
+        pipeline_use_case = RecordingRunPipelineUseCase()
+        use_case = self._build_use_case(provider, pipeline_use_case)
+
+        result = use_case.execute(
+            symbol="BTCUSDT",
+            interval="1h",
+            start_date="2024-01-01",
+            end_date="2024-01-02",
+            target_horizon=3,
+            train_baseline=True,
+            train_catboost=True,
+            enable_forecast_replay=True,
+            replay_steps=5,
+        )
+        self.run_ids.append(result.run.id)
+
+        self.assertEqual(result.error_message, "")
+        self.assertEqual(
+            provider.calls,
+            [
+                {
+                    "symbol": "BTCUSDT",
+                    "interval": "1h",
+                    "start": "2024-01-01",
+                    "end": "2024-01-02",
+                },
+                {
+                    "symbol": "BTCUSDT",
+                    "interval": "1h",
+                    "start": pd.Timestamp("2024-01-02 01:00:00"),
+                    "end": pd.Timestamp("2024-01-02 08:00:00"),
+                },
+            ],
+        )
+        pd.testing.assert_frame_equal(pipeline_use_case.future_df, future_df)
+        self.assertTrue(pipeline_use_case.enable_forecast_replay)
+        self.assertEqual(pipeline_use_case.replay_steps, 5)
+
+    def test_execute_with_forecast_replay_rejects_unknown_interval(self):
+        provider = RecordingMarketDataProvider(self._raw_df())
+        pipeline_use_case = RecordingRunPipelineUseCase()
+        use_case = self._build_use_case(provider, pipeline_use_case)
+
+        result = use_case.execute(
+            symbol="BTCUSDT",
+            interval="2d",
+            start_date="2024-01-01",
+            end_date="2024-01-02",
+            target_horizon=3,
+            enable_forecast_replay=True,
+            replay_steps=5,
+        )
+        self.run_ids.append(result.run.id)
+
+        result.run.refresh_from_db()
+        self.assertIn("Unsupported replay interval", result.error_message)
+        self.assertEqual(result.run.status, PipelineRun.Status.FAILED)
+        self.assertEqual(len(provider.calls), 1)
+        self.assertIsNone(pipeline_use_case.seen_run)
 
     def test_provider_error_marks_run_failed_without_raw_artifact(self):
         provider = FailingMarketDataProvider("binance unavailable")
@@ -143,6 +210,20 @@ class BinancePipelineUseCaseTests(TestCase):
             }
         )
 
+    @staticmethod
+    def _future_df():
+        return pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-02 01:00:00", periods=8, freq="h"),
+                "open": range(3, 11),
+                "high": range(4, 12),
+                "low": range(2, 10),
+                "close": range(3, 11),
+                "volume": range(102, 110),
+                "symbol": ["BTCUSDT"] * 8,
+            }
+        )
+
     def _delete_dataset_files(self):
         artifacts = DatasetArtifact.objects.filter(run_id__in=self.run_ids)
         for file_path in artifacts.values_list("file_path", flat=True):
@@ -155,7 +236,8 @@ class BinancePipelineUseCaseTests(TestCase):
 
 class RecordingMarketDataProvider:
     def __init__(self, raw_df):
-        self.raw_df = raw_df
+        self.responses = raw_df if isinstance(raw_df, list) else [raw_df]
+        self.raw_df = self.responses[0]
         self.calls = []
 
     def get_ohlcv(self, symbol, interval, start, end):
@@ -167,7 +249,8 @@ class RecordingMarketDataProvider:
                 "end": end,
             }
         )
-        return self.raw_df.copy()
+        response_index = min(len(self.calls) - 1, len(self.responses) - 1)
+        return self.responses[response_index].copy()
 
 
 class FailingMarketDataProvider:
@@ -184,14 +267,29 @@ class RecordingRunPipelineUseCase:
     def __init__(self):
         self.seen_run = None
         self.seen_raw_df = None
+        self.future_df = None
         self.train_baseline = None
         self.train_catboost = None
+        self.enable_forecast_replay = None
+        self.replay_steps = None
 
-    def execute(self, run, raw_df, train_baseline=True, train_catboost=True):
+    def execute(
+        self,
+        run,
+        raw_df,
+        train_baseline=True,
+        train_catboost=True,
+        future_df=None,
+        enable_forecast_replay=False,
+        replay_steps=5,
+    ):
         self.seen_run = run
         self.seen_raw_df = raw_df
+        self.future_df = future_df
         self.train_baseline = train_baseline
         self.train_catboost = train_catboost
+        self.enable_forecast_replay = enable_forecast_replay
+        self.replay_steps = replay_steps
         run.status = PipelineRun.Status.SUCCESS
         run.save(update_fields=["status"])
         return self.result

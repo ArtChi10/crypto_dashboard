@@ -182,10 +182,12 @@ The CLI command `run_research_evaluation` can run walk-forward evaluation and
 feature ablation on an existing final parquet/csv dataset and save CSV outputs
 without creating Django metadata.
 
-Forecast Replay is currently a reusable core/report service only. It is not yet
-connected to the Binance UI, main pipeline orchestration, persistence flow, or
-run detail page. Its purpose is replay/backtest visualization of classification
-decisions, not live price forecasting.
+Forecast Replay is now available as an optional Binance UI flow. When enabled,
+the Binance pipeline downloads a future candle window after `end_date`, uses the
+trained model selected in `catboost -> baseline -> dummy` order, and saves a
+replay table plus PNG report as persisted `ReportArtifact` records. Its purpose
+is replay/backtest visualization of classification decisions, not live price
+forecasting.
 
 ## 11. Current Reports
 
@@ -195,9 +197,9 @@ The MVP currently creates PNG reports for:
 - metrics comparison;
 - CatBoost feature importance;
 - period stability table as CSV;
-- period stability plot as PNG.
-- forecast replay table and PNG report types are reserved for the future replay
-  flow.
+- period stability plot as PNG;
+- forecast replay table as CSV;
+- forecast replay plot as PNG.
 
 The run detail page displays report links and renders safe PNG reports inline.
 
@@ -226,8 +228,8 @@ Known limitations:
 - walk-forward persistence, UI, and report integration are not implemented yet;
 - feature ablation exists as a standalone research utility, but ablation reports
   and pipeline integration are not implemented yet;
-- forecast replay exists as a core service/report layer, but Binance UI and
-  pipeline integration are not implemented yet;
+- forecast replay is integrated with the Binance UI, but it remains a simplified
+  synchronous replay/backtest visualization;
 - period stability is currently based on the single holdout test segment, not on
   rolling walk-forward windows;
 - no stability analysis by symbol, regime, or market condition yet;
@@ -245,7 +247,7 @@ Planned research steps:
 - integrate walk-forward evaluation with reporting and experiment persistence;
 - stability analysis by symbol and market regime;
 - integrate feature ablation with reporting and experiment persistence;
-- integrate Forecast Replay with Binance UI and persisted report artifacts;
+- extend Forecast Replay with richer UI controls and replay table previews;
 - additional dummy baseline strategies, such as `prior` and `stratified`;
 - probability calibration;
 - out-of-sample degradation analysis;

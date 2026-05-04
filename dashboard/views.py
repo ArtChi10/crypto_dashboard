@@ -65,6 +65,8 @@ def run_binance_pipeline(request):
                 target_horizon=form.cleaned_data["target_horizon"],
                 train_baseline=form.cleaned_data["train_baseline"],
                 train_catboost=form.cleaned_data["train_catboost"],
+                enable_forecast_replay=form.cleaned_data["enable_forecast_replay"],
+                replay_steps=form.cleaned_data["replay_steps"],
             )
             if result.run is not None:
                 return redirect("runs:detail", pk=result.run.pk)

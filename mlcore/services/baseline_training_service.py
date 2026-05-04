@@ -21,6 +21,7 @@ class BaselineTrainingResult:
     valid_rows: int
     test_rows: int
     test_predictions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    model: Any | None = None
 
 
 class BaselineTrainingService:
@@ -74,6 +75,7 @@ class BaselineTrainingService:
             valid_rows=len(valid_df),
             test_rows=len(test_df),
             test_predictions=test_predictions,
+            model=model,
         )
 
     @classmethod

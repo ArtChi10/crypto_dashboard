@@ -60,6 +60,9 @@ class RunPipelineUseCaseTests(TestCase):
             raw_df="raw",
             train_baseline=False,
             train_catboost=True,
+            future_df="future",
+            enable_forecast_replay=True,
+            replay_steps=7,
         )
 
         self.assertEqual(full_pipeline_service.raw_df, "raw")
@@ -68,6 +71,9 @@ class RunPipelineUseCaseTests(TestCase):
         self.assertEqual(full_pipeline_service.symbol, "ETHUSDT")
         self.assertFalse(full_pipeline_service.train_baseline)
         self.assertTrue(full_pipeline_service.train_catboost)
+        self.assertEqual(full_pipeline_service.future_df, "future")
+        self.assertTrue(full_pipeline_service.enable_forecast_replay)
+        self.assertEqual(full_pipeline_service.replay_steps, 7)
 
     def test_execute_passes_none_symbol_for_multiple_symbols(self):
         run = self._create_run(symbols_json=["BTCUSDT", "ETHUSDT"])
@@ -137,6 +143,9 @@ class RecordingFullPipelineService:
         self.symbol = None
         self.train_baseline = None
         self.train_catboost = None
+        self.future_df = None
+        self.enable_forecast_replay = None
+        self.replay_steps = None
         self.status_during_call = None
         self.error_message_during_call = None
 
@@ -148,6 +157,9 @@ class RecordingFullPipelineService:
         symbol=None,
         train_baseline=True,
         train_catboost=True,
+        future_df=None,
+        enable_forecast_replay=False,
+        replay_steps=5,
     ):
         run = PipelineRun.objects.get(id=run_id)
         self.status_during_call = run.status
@@ -158,6 +170,9 @@ class RecordingFullPipelineService:
         self.symbol = symbol
         self.train_baseline = train_baseline
         self.train_catboost = train_catboost
+        self.future_df = future_df
+        self.enable_forecast_replay = enable_forecast_replay
+        self.replay_steps = replay_steps
         return self.result
 
     @staticmethod

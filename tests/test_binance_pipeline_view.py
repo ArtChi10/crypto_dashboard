@@ -32,6 +32,9 @@ class BinancePipelineViewTests(TestCase):
         self.assertIn("OHLCV candles", html)
         self.assertIn("target_horizon", html)
         self.assertIn("через сколько свечей", html)
+        self.assertIn("Enable forecast replay", html)
+        self.assertIn("Replay steps", html)
+        self.assertIn("trading signal", html)
 
     def test_dashboard_and_nav_contain_binance_link(self):
         response = self.client.get("/")
@@ -64,6 +67,8 @@ class BinancePipelineViewTests(TestCase):
         self.assertEqual(use_case.target_horizon, 3)
         self.assertTrue(use_case.train_baseline)
         self.assertTrue(use_case.train_catboost)
+        self.assertTrue(use_case.enable_forecast_replay)
+        self.assertEqual(use_case.replay_steps, 5)
 
     def test_pipeline_error_after_run_creation_redirects_to_failed_run(self):
         use_case = FailingBinanceUseCase("binance failed")
@@ -111,6 +116,7 @@ class BinancePipelineViewTests(TestCase):
                     "start_date": "2024-01-01",
                     "end_date": "2024-01-02",
                     "target_horizon": "3",
+                    "replay_steps": "5",
                 },
             )
 
@@ -129,6 +135,8 @@ class BinancePipelineViewTests(TestCase):
             "target_horizon": "3",
             "train_baseline": "on",
             "train_catboost": "on",
+            "enable_forecast_replay": "on",
+            "replay_steps": "5",
         }
 
 
@@ -141,6 +149,8 @@ class RecordingBinanceUseCase:
         self.target_horizon = None
         self.train_baseline = None
         self.train_catboost = None
+        self.enable_forecast_replay = None
+        self.replay_steps = None
 
     def execute(
         self,
@@ -151,6 +161,8 @@ class RecordingBinanceUseCase:
         target_horizon,
         train_baseline=True,
         train_catboost=True,
+        enable_forecast_replay=False,
+        replay_steps=5,
     ):
         self.symbol = symbol
         self.interval = interval
@@ -159,6 +171,8 @@ class RecordingBinanceUseCase:
         self.target_horizon = target_horizon
         self.train_baseline = train_baseline
         self.train_catboost = train_catboost
+        self.enable_forecast_replay = enable_forecast_replay
+        self.replay_steps = replay_steps
         run = self._create_run(
             symbol=symbol,
             interval=interval,

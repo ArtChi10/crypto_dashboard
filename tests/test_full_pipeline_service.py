@@ -164,6 +164,100 @@ class FullPipelineServiceTests(unittest.TestCase):
         self.assertIs(result.baseline_result, baseline_service.result)
         self.assertIs(result.catboost_result, catboost_service.result)
 
+    def test_run_with_forecast_replay_creates_table_and_plot(self):
+        artifact_repository = ArtifactRepository(self.base_dir)
+        final_path = self.base_dir / "datasets" / "final" / "final.parquet"
+        feature_columns = ["open", "high", "low", "close", "volume"]
+        final_df = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=20, freq="h"),
+                "open": range(20),
+                "high": range(1, 21),
+                "low": range(20),
+                "close": [1, 3, 2, 4] * 5,
+                "volume": range(100, 120),
+                "target": [0, 1] * 10,
+            }
+        )
+        catboost_model = RecordingReplayModel()
+        preparation_service = RecordingDatasetPreparationService(
+            final_path,
+            artifact_repository=artifact_repository,
+        )
+        dataset_repository = RecordingDatasetRepository(final_df)
+        dummy_service = RecordingTrainingService(
+            DummyTrainingResult(
+                model_path=self.base_dir / "dummy.joblib",
+                metrics={"accuracy": 1.0},
+                feature_columns=feature_columns,
+                train_rows=10,
+                valid_rows=5,
+                test_rows=5,
+                model=RecordingReplayModel(),
+            )
+        )
+        baseline_service = RecordingTrainingService(
+            BaselineTrainingResult(
+                model_path=self.base_dir / "baseline.joblib",
+                metrics={"accuracy": 1.0},
+                feature_columns=feature_columns,
+                train_rows=10,
+                valid_rows=5,
+                test_rows=5,
+                model=RecordingReplayModel(),
+            )
+        )
+        catboost_service = RecordingTrainingService(
+            CatBoostTrainingResult(
+                model_path=self.base_dir / "catboost.cbm",
+                metrics={"accuracy": 1.0},
+                feature_columns=feature_columns,
+                train_rows=10,
+                valid_rows=5,
+                test_rows=5,
+                model=catboost_model,
+            )
+        )
+        service = FullPipelineService(
+            dataset_preparation_service=preparation_service,
+            dummy_training_service=dummy_service,
+            baseline_training_service=baseline_service,
+            catboost_training_service=catboost_service,
+            dataset_repository=dataset_repository,
+        )
+
+        result = service.run(
+            self._make_raw_frame(row_count=40),
+            run_id=11,
+            horizon=3,
+            symbol="BTCUSDT",
+            future_df=self._make_future_frame(row_count=8),
+            enable_forecast_replay=True,
+            replay_steps=5,
+        )
+
+        self.assertIsNotNone(result.forecast_replay_table_path)
+        self.assertIsNotNone(result.forecast_replay_report_path)
+        self.assertTrue(result.forecast_replay_table_path.is_file())
+        self.assertTrue(result.forecast_replay_report_path.is_file())
+        self.assertEqual(result.forecast_replay_table_path.suffix, ".csv")
+        self.assertEqual(result.forecast_replay_report_path.suffix, ".png")
+        replay_df = pd.read_csv(result.forecast_replay_table_path)
+        self.assertEqual(len(replay_df), 5)
+        self.assertEqual(
+            list(replay_df.columns),
+            [
+                "timestamp",
+                "close",
+                "future_close",
+                "actual_direction",
+                "predicted_direction",
+                "predicted_probability",
+                "is_correct",
+            ],
+        )
+        self.assertEqual(catboost_model.seen_columns, feature_columns)
+
     def _make_service(self):
         artifact_repository = ArtifactRepository(self.base_dir)
         return FullPipelineService(
@@ -189,10 +283,27 @@ class FullPipelineServiceTests(unittest.TestCase):
             }
         )
 
+    @staticmethod
+    def _make_future_frame(row_count: int = 8) -> pd.DataFrame:
+        close_pattern = [4, 2, 5, 3]
+        close_values = [close_pattern[index % len(close_pattern)] for index in range(row_count)]
+        return pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-02 16:00:00", periods=row_count, freq="h"),
+                "open": close_values,
+                "high": [value + 1 for value in close_values],
+                "low": [value - 1 for value in close_values],
+                "close": close_values,
+                "volume": range(200, 200 + row_count),
+                "symbol": ["BTCUSDT"] * row_count,
+            }
+        )
+
 
 class RecordingDatasetPreparationService:
-    def __init__(self, final_path):
+    def __init__(self, final_path, artifact_repository=None):
         self.final_path = final_path
+        self.artifact_repository = artifact_repository
         self.called = False
 
     def prepare(self, raw_df, run_id, horizon=3, symbol=None):
@@ -212,10 +323,16 @@ class RecordingDatasetRepository:
     def __init__(self, final_df):
         self.final_df = final_df
         self.loaded_path = None
+        self.saved_path = None
 
     def load(self, path):
         self.loaded_path = path
         return self.final_df
+
+    def save(self, df, path):
+        self.saved_path = path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(path, index=False)
 
 
 class RecordingTrainingService:
@@ -228,6 +345,18 @@ class RecordingTrainingService:
         self.seen_df = df
         self.seen_run_id = run_id
         return self.result
+
+
+class RecordingReplayModel:
+    def __init__(self):
+        self.seen_columns = None
+
+    def predict(self, x):
+        self.seen_columns = list(x.columns)
+        return [1] * len(x)
+
+    def predict_proba(self, x):
+        return [[0.25, 0.75] for _ in range(len(x))]
 
 
 if __name__ == "__main__":

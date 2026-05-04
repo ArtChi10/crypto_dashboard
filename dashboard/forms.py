@@ -180,6 +180,22 @@ class BinancePipelineForm(forms.Form):
         initial=True,
         required=False,
     )
+    enable_forecast_replay = forms.BooleanField(
+        label="Enable forecast replay",
+        initial=False,
+        required=False,
+        help_text=(
+            "Downloads candles after the selected end date and compares model direction "
+            "predictions with actual future movement."
+        ),
+    )
+    replay_steps = forms.IntegerField(
+        label="Replay steps",
+        initial=5,
+        min_value=1,
+        max_value=50,
+        help_text="Number of future replay points to compare. Use 5 for a quick MVP check.",
+    )
 
     def clean_symbol(self):
         symbol = self.cleaned_data["symbol"].strip().upper()

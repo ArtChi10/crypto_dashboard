@@ -22,6 +22,7 @@ class CatBoostTrainingResult:
     test_rows: int
     feature_importances: dict[str, float] = field(default_factory=dict)
     test_predictions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    model: Any | None = None
 
 
 class CatBoostTrainingService:
@@ -77,6 +78,7 @@ class CatBoostTrainingService:
             test_rows=len(test_df),
             feature_importances=feature_importances,
             test_predictions=test_predictions,
+            model=model,
         )
 
     @classmethod

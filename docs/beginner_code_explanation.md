@@ -344,8 +344,10 @@ Replay table содержит:
 и markers, где видно predicted up/down и correct/incorrect. Это
 replay/backtest visualization, не live price forecasting.
 
-Сейчас это reusable service/report layer. Он еще не подключен к `/binance/`,
-основному pipeline orchestration или run detail UI.
+В Binance UI это подключено как optional checkbox. Если replay включен,
+`/binance/` докачивает future candles после `end_date`, а `FullPipelineService`
+создает `forecast_replay_table` CSV и `forecast_replay` PNG. Run detail page
+показывает эти файлы через обычные `ReportArtifact` links/gallery.
 
 ## Что делает Evaluator
 
@@ -538,7 +540,9 @@ baseline-модели обучает `CatBoostClassifier`.
    `PeriodStabilityReportService`.
 9. Если CatBoost вернул feature importances, строит PNG feature importance report
    через `FeatureImportanceReportService`.
-10. Возвращает общий результат: preparation result, dummy result, baseline result,
+10. Если передан `future_df` и включен Forecast Replay, выбирает модель в порядке
+    `catboost -> baseline -> dummy`, строит replay CSV/PNG reports.
+11. Возвращает общий результат: preparation result, dummy result, baseline result,
     CatBoost result и paths к report files.
 
 Если все training flags выключены, service сразу выдаст `ValueError`.
@@ -571,6 +575,8 @@ metadata.
 - `ReportArtifact` для metrics comparison PNG;
 - `ReportArtifact` для stability table CSV;
 - `ReportArtifact` для stability plot PNG;
+- `ReportArtifact` для forecast replay table CSV, если replay включен;
+- `ReportArtifact` для forecast replay PNG, если replay включен;
 - `ReportArtifact` для CatBoost feature importance PNG.
 
 В `runs/models.py` эти типы теперь записаны явно в Django choices:
@@ -617,9 +623,10 @@ metrics.
 в `error_message`, заполняет `finished_at` и снова выбрасывает ошибку. Так код,
 который вызвал use case, видит проблему, а в базе остается понятный failed run.
 
-Важно: use case не скачивает данные из Binance. Страница `/upload/` читает CSV
-в raw `DataFrame` и передает его в этот use case. Binance-загрузка теперь есть
-отдельным provider-ом, но пока не подключена к этому use case.
+Важно: use case сам не скачивает данные из Binance. Страница `/upload/` читает
+CSV в raw `DataFrame`, а `/binance/` сначала вызывает `BinanceMarketDataProvider`.
+Когда Forecast Replay включен, Binance flow также передает в этот use case
+`future_df`, `enable_forecast_replay` и `replay_steps`.
 
 ## Что делает BinanceMarketDataProvider
 
@@ -668,7 +675,9 @@ OHLCV-таблицу. Ошибки API, пустой ответ и network error
 - end_date;
 - target_horizon;
 - train_baseline;
-- train_catboost.
+- train_catboost;
+- enable_forecast_replay;
+- replay_steps.
 
 Рядом с формой есть help-блок: required CSV columns
 `timestamp`, `open`, `high`, `low`, `close`, `volume`, recommended `symbol`,
@@ -710,6 +719,11 @@ OHLCV candles, показывает примеры `BTCUSDT` и `1h`, описы
 Сам use case скачивает OHLCV через `BinanceMarketDataProvider`, создает
 `PipelineRun`, сохраняет raw Binance dataset как parquet в `media/datasets/raw/`
 и вызывает `RunPipelineUseCase`.
+
+Если включен Forecast Replay, use case докачивает future OHLCV candles после
+`end_date`. Дальше `FullPipelineService` использует уже обученную модель,
+строит replay table/plot, а `RunPersistenceService` сохраняет их как
+`ReportArtifact`. Это показывает classification reality check, не прогноз цены.
 
 Если обе модели выключены, форма показывает validation error и use case не
 запускается. Если ошибка случилась после создания run, пользователь попадает на
@@ -870,7 +884,7 @@ raw data
 - Research walk-forward folds без random shuffle.
 - Research walk-forward evaluation по folds.
 - Research feature ablation по группам признаков.
-- Forecast Replay core service и PNG report service.
+- Forecast Replay core service, Binance UI integration и PNG/CSV reports.
 - Метрики качества.
 - Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.

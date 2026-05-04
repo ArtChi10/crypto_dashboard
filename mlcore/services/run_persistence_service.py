@@ -22,12 +22,16 @@ class RunPersistenceResult:
     feature_importance_report_artifact: Any | None = None
     stability_table_report_artifact: Any | None = None
     stability_plot_report_artifact: Any | None = None
+    forecast_replay_report_artifact: Any | None = None
+    forecast_replay_table_report_artifact: Any | None = None
 
 
 class RunPersistenceService:
     DUMMY_MODEL_TYPE = "dummy"
     STABILITY_TABLE_REPORT_TYPE = "stability_table"
     STABILITY_PLOT_REPORT_TYPE = "stability_plot"
+    FORECAST_REPLAY_REPORT_TYPE = "forecast_replay"
+    FORECAST_REPLAY_TABLE_REPORT_TYPE = "forecast_replay_table"
 
     def save_full_pipeline_result(self, run: Any, result: Any) -> RunPersistenceResult:
         from django.db import transaction
@@ -161,6 +165,32 @@ class RunPersistenceService:
                     file_path=self._metadata_path(feature_importance_report_path),
                 )
 
+            forecast_replay_table_report_artifact = None
+            forecast_replay_table_path = getattr(
+                result,
+                "forecast_replay_table_path",
+                None,
+            )
+            if forecast_replay_table_path is not None:
+                forecast_replay_table_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=self.FORECAST_REPLAY_TABLE_REPORT_TYPE,
+                    file_path=self._metadata_path(forecast_replay_table_path),
+                )
+
+            forecast_replay_report_artifact = None
+            forecast_replay_report_path = getattr(
+                result,
+                "forecast_replay_report_path",
+                None,
+            )
+            if forecast_replay_report_path is not None:
+                forecast_replay_report_artifact = ReportArtifact.objects.create(
+                    run=run,
+                    report_type=self.FORECAST_REPLAY_REPORT_TYPE,
+                    file_path=self._metadata_path(forecast_replay_report_path),
+                )
+
         return RunPersistenceResult(
             processed_dataset_artifact=processed_dataset_artifact,
             final_dataset_artifact=final_dataset_artifact,
@@ -175,6 +205,8 @@ class RunPersistenceService:
             feature_importance_report_artifact=feature_importance_report_artifact,
             stability_table_report_artifact=stability_table_report_artifact,
             stability_plot_report_artifact=stability_plot_report_artifact,
+            forecast_replay_report_artifact=forecast_replay_report_artifact,
+            forecast_replay_table_report_artifact=forecast_replay_table_report_artifact,
         )
 
     @classmethod

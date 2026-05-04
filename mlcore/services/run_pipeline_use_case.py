@@ -33,6 +33,9 @@ class RunPipelineUseCase:
         raw_df: Any,
         train_baseline: bool = True,
         train_catboost: bool = True,
+        future_df: Any | None = None,
+        enable_forecast_replay: bool = False,
+        replay_steps: int = 5,
     ) -> RunPipelineResult:
         self._mark_running(run)
         try:
@@ -43,6 +46,9 @@ class RunPipelineUseCase:
                 symbol=self._single_symbol(run.symbols_json),
                 train_baseline=train_baseline,
                 train_catboost=train_catboost,
+                future_df=future_df,
+                enable_forecast_replay=enable_forecast_replay,
+                replay_steps=replay_steps,
             )
             persistence_result = self.persistence_service.save_full_pipeline_result(
                 run,

@@ -107,8 +107,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 - Обзорный Dashboard со ссылками на реальные pipeline entry points.
 - Страница `/upload/` для ручной загрузки raw OHLCV CSV, сохранения raw artifact
   и синхронного запуска pipeline.
-- Страница `/binance/` для загрузки OHLCV candles из Binance и синхронного
-  запуска pipeline.
+- Страница `/binance/` для загрузки OHLCV candles из Binance, синхронного
+  запуска pipeline и optional Forecast Replay по будущему окну после `end_date`.
 - `ArtifactRepository` для построения путей artifacts.
   Он централизованно знает все dataset/model/report types, включая
   `stability_table`, `stability_plot`, `forecast_replay` и
@@ -162,8 +162,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
   синхронно.
 - Dashboard не запускает pipeline напрямую; он только показывает overview,
   последние runs и ссылки на `/binance/`, `/upload/`, `/runs/`.
-- Forecast Replay пока добавлен как reusable service/report layer. Он еще не
-  подключен к `/binance/`, основному pipeline orchestration или run detail UI.
+- Forecast Replay подключен к `/binance/` как optional reality-check flow, но это
+  synchronous replay/backtest visualization, а не live forecasting.
 
 ## Окружение
 
@@ -264,10 +264,13 @@ Dashboard больше не создает пустые `PipelineRun` records. P
 http://127.0.0.1:8000/binance/
 ```
 
-Выберите symbol, interval, date range, target horizon и модели.
+Выберите symbol, interval, date range, target horizon и модели. Optional
+`Enable forecast replay` докачивает будущие candles после `end_date`, строит
+CSV/PNG replay reports и показывает их на `/runs/<id>/`.
 Страница также содержит короткую contextual help-подсказку: что такое Binance
 Spot OHLCV candles, примеры `BTCUSDT`/`1h`, смысл `target_horizon` и какие
-artifacts появятся после запуска.
+artifacts появятся после запуска. Replay показывает predicted up/down против
+факта, но не является прогнозом цены или trading signal.
 
 2. Для CSV откройте:
 
@@ -340,7 +343,9 @@ http://127.0.0.1:8000/binance/
 - `end_date`;
 - `target_horizon`, по умолчанию `3`;
 - `train_baseline`;
-- `train_catboost`.
+- `train_catboost`;
+- `enable_forecast_replay`;
+- `replay_steps`, по умолчанию `5`.
 
 3. Нажмите `Скачать Binance data и запустить pipeline`.
 
@@ -348,6 +353,14 @@ http://127.0.0.1:8000/binance/
 скачивает OHLCV через `BinanceMarketDataProvider`, сохраняет raw Binance dataset
 как parquet `DatasetArtifact(type="raw")`, запускает `RunPipelineUseCase` и
 перенаправляет на `/runs/<id>/`.
+
+Если `enable_forecast_replay` включен, `BinancePipelineUseCase` дополнительно
+скачивает future window после `end_date`. `FullPipelineService` выбирает модель
+в порядке `catboost -> baseline -> dummy`, строит replay table через
+`ForecastReplayService`, сохраняет `forecast_replay_table` CSV и
+`forecast_replay` PNG. `RunPersistenceService` сохраняет оба файла как
+`ReportArtifact`, поэтому PNG появляется в существующей report gallery на
+`/runs/<id>/`, а CSV доступен как link.
 
 Если обе модели выключены, форма покажет ошибку и pipeline не запустится. Если
 ошибка произошла после создания run, страница перенаправит на detail page, где
@@ -652,9 +665,8 @@ predicted_probability, is_correct
 в `predicted_probability`; иначе там будет `None`.
 
 `ForecastReplayReportService` строит PNG-график: historical close, replay close
-и markers predicted up/down с correct/incorrect цветом. Artifact types уже
-зарезервированы как `forecast_replay` для PNG и `forecast_replay_table` для CSV,
-но автоматическая интеграция в Binance UI будет отдельной задачей.
+и markers predicted up/down с correct/incorrect цветом. В Binance UI эти outputs
+сохраняются как `forecast_replay` для PNG и `forecast_replay_table` для CSV.
 
 Важно: это replay/backtest visualization для classification model, а не live
 price forecasting и не trading signal.

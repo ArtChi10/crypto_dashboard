@@ -64,6 +64,20 @@
                         {{ form.train_catboost.label_tag }}
                         {{ form.train_catboost.errors }}
                     </p>
+
+                    <p class="form-row">
+                        {{ form.enable_forecast_replay }}
+                        {{ form.enable_forecast_replay.label_tag }}
+                        {{ form.enable_forecast_replay.errors }}
+                        <span class="helptext">{{ form.enable_forecast_replay.help_text }}</span>
+                    </p>
+
+                    <p class="form-row">
+                        {{ form.replay_steps.label_tag }}
+                        {{ form.replay_steps }}
+                        {{ form.replay_steps.errors }}
+                        <span class="helptext">{{ form.replay_steps.help_text }}</span>
+                    </p>
                 </div>
 
                 <div class="toolbar">
@@ -79,6 +93,13 @@
                     <li>Пример symbol: <code class="inline-code">BTCUSDT</code>. Пример interval: <code class="inline-code">1h</code>.</li>
                     <li><code class="inline-code">target_horizon</code> означает, через сколько свечей проверяем, вырос ли close.</li>
                     <li>Для быстрой проверки выберите короткий date range.</li>
+                </ul>
+                <h3 class="help-panel__title">Forecast replay</h3>
+                <ul class="help-list">
+                    <li>Replay использует обученную classification-модель и будущие candles после end date.</li>
+                    <li>Он показывает predicted up/down и фактическое движение close.</li>
+                    <li>Это reality check для классификации, не прогноз цены и не trading signal.</li>
+                    <li>Для MVP обычно достаточно <code class="inline-code">5</code> replay steps.</li>
                 </ul>
             </aside>
         </div>

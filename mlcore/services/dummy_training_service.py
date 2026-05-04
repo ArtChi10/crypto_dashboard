@@ -22,6 +22,7 @@ class DummyTrainingResult:
     valid_rows: int
     test_rows: int
     test_predictions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    model: Any | None = None
 
 
 class DummyTrainingService:
@@ -72,6 +73,7 @@ class DummyTrainingService:
             valid_rows=len(valid_df),
             test_rows=len(test_df),
             test_predictions=test_predictions,
+            model=model,
         )
 
     def _model_path(self, run_id: int) -> Path:

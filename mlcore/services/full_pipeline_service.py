@@ -20,8 +20,10 @@ from mlcore.services.dataset_preparation_service import (
     DatasetPreparationService,
 )
 from mlcore.services.dummy_training_service import DummyTrainingResult, DummyTrainingService
+from mlcore.services.forecast_replay_service import ForecastReplayService
 from mlcore.services.report_service import (
     FeatureImportanceReportService,
+    ForecastReplayReportService,
     MetricsComparisonReportService,
     PeriodStabilityReportService,
     TargetDistributionReportService,
@@ -39,6 +41,8 @@ class FullPipelineResult:
     feature_importance_report_path: Path | None = None
     stability_table_report_path: Path | None = None
     stability_plot_report_path: Path | None = None
+    forecast_replay_report_path: Path | None = None
+    forecast_replay_table_path: Path | None = None
 
 
 class FullPipelineService:
@@ -53,6 +57,8 @@ class FullPipelineService:
         metrics_comparison_report_service: MetricsComparisonReportService | None = None,
         period_stability_report_service: PeriodStabilityReportService | None = None,
         feature_importance_report_service: FeatureImportanceReportService | None = None,
+        forecast_replay_service: ForecastReplayService | None = None,
+        forecast_replay_report_service: ForecastReplayReportService | None = None,
     ) -> None:
         self.artifact_repository = self._infer_artifact_repository(
             dataset_preparation_service,
@@ -98,6 +104,10 @@ class FullPipelineService:
         self.feature_importance_report_service = (
             feature_importance_report_service or FeatureImportanceReportService()
         )
+        self.forecast_replay_service = forecast_replay_service or ForecastReplayService()
+        self.forecast_replay_report_service = (
+            forecast_replay_report_service or ForecastReplayReportService()
+        )
 
     def run(
         self,
@@ -108,6 +118,9 @@ class FullPipelineService:
         train_dummy: bool = True,
         train_baseline: bool = True,
         train_catboost: bool = True,
+        future_df: Any | None = None,
+        enable_forecast_replay: bool = False,
+        replay_steps: int = 5,
     ) -> FullPipelineResult:
         if not train_dummy and not train_baseline and not train_catboost:
             raise ValueError("At least one training flag must be True.")
@@ -202,6 +215,21 @@ class FullPipelineService:
                 ),
             )
 
+        forecast_replay_report_path = None
+        forecast_replay_table_path = None
+        if enable_forecast_replay:
+            forecast_replay_table_path, forecast_replay_report_path = self._build_forecast_replay(
+                history_df=raw_df,
+                future_df=future_df,
+                run_id=run_id,
+                final_path=preparation_result.final_path,
+                horizon=horizon,
+                replay_steps=replay_steps,
+                dummy_result=dummy_result,
+                baseline_result=baseline_result,
+                catboost_result=catboost_result,
+            )
+
         return FullPipelineResult(
             preparation_result=preparation_result,
             baseline_result=baseline_result,
@@ -212,6 +240,8 @@ class FullPipelineService:
             feature_importance_report_path=feature_importance_report_path,
             stability_table_report_path=stability_table_report_path,
             stability_plot_report_path=stability_plot_report_path,
+            forecast_replay_report_path=forecast_replay_report_path,
+            forecast_replay_table_path=forecast_replay_table_path,
         )
 
     @staticmethod
@@ -243,6 +273,74 @@ class FullPipelineService:
         if catboost_result is not None and not catboost_result.test_predictions.empty:
             predictions_by_model["catboost"] = catboost_result.test_predictions
         return predictions_by_model
+
+    def _build_forecast_replay(
+        self,
+        history_df: Any,
+        future_df: Any | None,
+        run_id: int,
+        final_path: Path,
+        horizon: int,
+        replay_steps: int,
+        dummy_result: DummyTrainingResult | None,
+        baseline_result: BaselineTrainingResult | None,
+        catboost_result: CatBoostTrainingResult | None,
+    ) -> tuple[Path, Path]:
+        if future_df is None:
+            raise ValueError("future_df must be provided when forecast replay is enabled.")
+
+        model_result = self._forecast_replay_model_result(
+            dummy_result=dummy_result,
+            baseline_result=baseline_result,
+            catboost_result=catboost_result,
+        )
+        if model_result.model is None:
+            raise ValueError("Selected forecast replay model is not available in memory.")
+
+        replay_df = self.forecast_replay_service.build_replay(
+            history_df=history_df,
+            future_df=future_df,
+            model=model_result.model,
+            feature_columns=model_result.feature_columns,
+            horizon=horizon,
+            replay_steps=replay_steps,
+        )
+        if replay_df.empty:
+            raise ValueError("Forecast replay did not produce any rows.")
+
+        table_path = self._report_path(
+            "forecast_replay_table",
+            run_id=run_id,
+            final_path=final_path,
+            extension="csv",
+        )
+        self.dataset_repository.save(replay_df, table_path)
+
+        report_path = self.forecast_replay_report_service.build(
+            history_df,
+            replay_df,
+            self._report_path(
+                "forecast_replay",
+                run_id=run_id,
+                final_path=final_path,
+                extension="png",
+            ),
+        )
+        return table_path, report_path
+
+    @staticmethod
+    def _forecast_replay_model_result(
+        dummy_result: DummyTrainingResult | None,
+        baseline_result: BaselineTrainingResult | None,
+        catboost_result: CatBoostTrainingResult | None,
+    ) -> CatBoostTrainingResult | BaselineTrainingResult | DummyTrainingResult:
+        if catboost_result is not None:
+            return catboost_result
+        if baseline_result is not None:
+            return baseline_result
+        if dummy_result is not None:
+            return dummy_result
+        raise ValueError("No trained model is available for forecast replay.")
 
     def _report_path(
         self,
