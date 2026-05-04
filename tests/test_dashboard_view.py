@@ -52,6 +52,11 @@ class DashboardViewTests(TestCase):
         self.assertEqual(response.status_code, 405)
         self.assertEqual(PipelineRun.objects.count(), before_count)
 
+    def test_head_is_allowed_for_deployment_healthcheck(self):
+        response = self.client.head("/")
+
+        self.assertEqual(response.status_code, 200)
+
     def test_latest_runs_are_still_displayed(self):
         run = PipelineRun.objects.create(
             name="Successful Binance run",

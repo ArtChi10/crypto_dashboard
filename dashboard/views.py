@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_safe
 
 from mlcore.services import CsvPipelineUploadUseCase
 from mlcore.services.binance_pipeline_use_case import BinancePipelineUseCase
@@ -8,7 +8,7 @@ from runs.models import PipelineRun
 from .forms import BinancePipelineForm, CsvUploadForm
 
 
-@require_GET
+@require_safe
 def dashboard_home(request):
     latest_runs = PipelineRun.objects.order_by("-created_at")[:10]
     total_runs = PipelineRun.objects.count()
