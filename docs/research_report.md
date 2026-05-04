@@ -13,6 +13,12 @@ The companion model card is available at
 out-of-scope use, data, target, metrics, limitations, risks, mitigations, and
 reproducibility.
 
+The current real-data findings are aggregated in
+[`docs/research_conclusions.md`](research_conclusions.md). That document is the
+best short entry point for the research story: what was tested, what worked,
+where the model is weak, and why the current results are reproducibility and
+robustness evidence rather than market-performance claims.
+
 ## 2. Problem Statement
 
 The current task is binary classification of short-term cryptocurrency price
@@ -106,6 +112,13 @@ The real-data feature ablation report is available at
 chronological train/test split on the frozen dataset and compares what happens
 when engineered OHLCV feature groups are removed. Ablation is diagnostic feature
 analysis; it does not imply profitability.
+
+The current cross-report conclusion is available at
+[`docs/research_conclusions.md`](research_conclusions.md). On the short frozen
+BTCUSDT 1h smoke benchmark, the best model by mean F1 is the LogisticRegression
+baseline, but fold count is low, bootstrap intervals are wide, and error
+analysis shows a high false-positive count. The result is a useful reproducible
+research workflow, not evidence of a deployable market edge.
 
 ## 5. Target Definition
 
@@ -266,6 +279,10 @@ walk-forward benchmark before ablation, stability, or Forecast Replay
 experiments. The frozen input, EDA, and fold-by-fold benchmark improve
 reproducibility, but they still do not make metrics evidence of trading
 profitability.
+
+For the current concise interpretation, read
+[`docs/research_conclusions.md`](research_conclusions.md) before the individual
+deep-dive reports.
 
 ## 12. Known Limitations
 

@@ -7,6 +7,7 @@
 | Current version | MVP research dashboard |
 | Ready for local demo | Yes |
 | Ready for production trading | No |
+| Real-data research conclusions | Available |
 
 This document summarizes the current project state. It is a readiness snapshot
 for local demonstration and reproducible research workflow review, not a
@@ -35,6 +36,14 @@ Implemented capabilities:
   - walk-forward validation;
   - walk-forward evaluation command;
   - feature ablation command;
+- real-data research reports:
+  - frozen dataset manifest;
+  - EDA;
+  - walk-forward benchmark with bootstrap confidence intervals;
+  - regime analysis;
+  - error analysis;
+  - feature ablation;
+  - concise research conclusions;
 - environment-based Django settings with `.env.example`;
 - local Docker Compose stack with Django, PostgreSQL, static collection, and
   persistent media volume;
@@ -67,6 +76,7 @@ Latest known local results:
 | Docker Compose local stack | Configured |
 | Production Compose config | Configured |
 | SSH CD workflow | Configured |
+| Real-data research conclusions | Available |
 | HTTPS | Pending |
 | Background jobs | Pending |
 
@@ -108,7 +118,14 @@ Current public documentation:
 - [`README.md`](../README.md);
 - [`docs/current_usage_guide.md`](current_usage_guide.md);
 - [`docs/research_report.md`](research_report.md);
+- [`docs/research_conclusions.md`](research_conclusions.md);
 - [`docs/model_card.md`](model_card.md);
+- [`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md);
+- [`docs/real_data_eda.md`](real_data_eda.md);
+- [`docs/real_data_walk_forward_benchmark.md`](real_data_walk_forward_benchmark.md);
+- [`docs/real_data_regime_analysis.md`](real_data_regime_analysis.md);
+- [`docs/real_data_error_analysis.md`](real_data_error_analysis.md);
+- [`docs/real_data_feature_ablation.md`](real_data_feature_ablation.md);
 - [`docs/eda_sample_dataset.md`](eda_sample_dataset.md);
 - [`docs/experiment_summary_sample.md`](experiment_summary_sample.md);
 - [`docs/final_regression_checklist.md`](final_regression_checklist.md);
@@ -130,6 +147,8 @@ Known limitations:
 - no live trading, order execution, portfolio allocation, or monitoring;
 - no transaction costs, fees, spreads, slippage, or latency modeling;
 - metrics are research signals and pipeline checks, not profitability claims;
+- real-data conclusions are available, but they explicitly describe the current
+  model evidence as limited and not production trading readiness;
 - Binance workflows depend on network access and Binance API availability;
 - walk-forward and ablation tools are currently offline utilities, not
   first-class dashboard reports.

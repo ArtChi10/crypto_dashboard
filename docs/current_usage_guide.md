@@ -16,6 +16,7 @@ CSV через `/upload/`, хранить ссылки на dataset/model/report
 
 Research report skeleton: [`docs/research_report.md`](research_report.md).
 Model card: [`docs/model_card.md`](model_card.md).
+Research conclusions: [`docs/research_conclusions.md`](research_conclusions.md).
 Real data dataset manifest guide:
 [`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
 
@@ -35,6 +36,25 @@ media/ = большие файлы datasets, models, reports
 GitHub Actions CI запускает тот же базовый набор проверок на `push` и
 `pull_request`: `manage.py check`, `ruff check`, `ruff format --check` и
 `manage.py test`.
+
+## Как читать research results
+
+Короткий итог текущего real-data исследования собран здесь:
+[`docs/research_conclusions.md`](research_conclusions.md).
+
+Это entry point для публичной истории проекта: какой research question
+проверялся, какие real-data reports уже есть, какие результаты получились на
+frozen `BTCUSDT 1h` smoke dataset и почему эти результаты являются проверкой
+reproducibility/robustness, а не trading claim.
+
+После conclusions можно открывать отдельные подробные отчеты:
+
+- [`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md);
+- [`docs/real_data_eda.md`](real_data_eda.md);
+- [`docs/real_data_walk_forward_benchmark.md`](real_data_walk_forward_benchmark.md);
+- [`docs/real_data_regime_analysis.md`](real_data_regime_analysis.md);
+- [`docs/real_data_error_analysis.md`](real_data_error_analysis.md);
+- [`docs/real_data_feature_ablation.md`](real_data_feature_ablation.md).
 
 ## Environment variables
 

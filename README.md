@@ -133,6 +133,36 @@ The main pipeline uses a global time-based holdout split. Rows are sorted by
 These tools are research aids. They make model behavior easier to inspect, but
 they do not prove profitability.
 
+## Research Results
+
+Current public research results are summarized in the
+[research conclusions](docs/research_conclusions.md).
+
+The current frozen real-data smoke benchmark uses `BTCUSDT`, `1h`,
+`2025-01-01` to `2025-01-10`, target horizon `3`, and chronological
+walk-forward folds. In that short run, the strongest trainer by mean F1 is the
+LogisticRegression baseline (`f1_mean=0.3757`, `roc_auc_mean=0.6153`), but the
+bootstrap F1 interval is wide (`[0.1538, 0.5217]`) because there are only `3`
+folds.
+
+Error analysis is deliberately visible: the baseline smoke run produced `72`
+walk-forward predictions, `39` errors, error rate `0.5417`, `29` false
+positives, and `10` false negatives. Regime analysis shows metrics vary by
+volatility/trend bucket, and feature ablation found `without_moving_average` as
+the best smoke split by F1 (`0.5000`) with only a small delta over all features.
+
+The useful conclusion is about reproducibility and robustness inspection, not a
+tradable signal. The current reports show how to freeze data, run time-aware
+validation, inspect errors, compare regimes, and audit feature groups. They do
+not establish stable market predictability.
+
+Detailed reports:
+
+- [Real data walk-forward benchmark](docs/real_data_walk_forward_benchmark.md)
+- [Real data regime analysis](docs/real_data_regime_analysis.md)
+- [Real data error analysis](docs/real_data_error_analysis.md)
+- [Real data feature ablation report](docs/real_data_feature_ablation.md)
+
 ## Quickstart
 
 Generic local setup:
@@ -400,6 +430,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Deployment guide](docs/deployment_guide.md)
+- [Research conclusions](docs/research_conclusions.md)
 - [Research report](docs/research_report.md)
 - [Model card](docs/model_card.md)
 - [Real data dataset manifest guide](docs/real_data_dataset_manifest.md)
