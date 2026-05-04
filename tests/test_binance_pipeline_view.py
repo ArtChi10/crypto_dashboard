@@ -28,7 +28,10 @@ class BinancePipelineViewTests(TestCase):
         html = response.content.decode()
         self.assertIn("BTCUSDT", html)
         self.assertIn("Binance", html)
+        self.assertIn("Binance Spot API", html)
+        self.assertIn("OHLCV candles", html)
         self.assertIn("target_horizon", html)
+        self.assertIn("через сколько свечей", html)
 
     def test_dashboard_and_nav_contain_binance_link(self):
         response = self.client.get("/")

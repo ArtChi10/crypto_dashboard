@@ -41,6 +41,10 @@ Django здесь не обучает модель сам. Он дает удо�
 - `/runs/` - список всех запусков;
 - `/runs/<id>/` - детали одного запуска.
 
+На pipeline pages есть короткие contextual help-блоки. Они не запускают код и не
+меняют данные; это обычный template text, который объясняет входные данные,
+статусы, artifacts, metrics и reports.
+
 Так проще поддерживать код: главная страница живет в одном месте, история и
 детали запусков - в другом.
 
@@ -625,6 +629,11 @@ OHLCV-таблицу. Ошибки API, пустой ответ и network error
 - train_baseline;
 - train_catboost.
 
+Рядом с формой есть help-блок: required CSV columns
+`timestamp`, `open`, `high`, `low`, `close`, `volume`, recommended `symbol`,
+sample dataset path `data/samples/sample_ohlcv.csv` и краткое описание raw
+artifact/result page flow.
+
 После отправки формы view передает cleaned form data в `CsvPipelineUploadUseCase`.
 Сам use case читает CSV через pandas, создает `PipelineRun`, сохраняет исходный
 CSV в `media/datasets/raw/` и создает raw `DatasetArtifact` с `symbol` и
@@ -652,6 +661,10 @@ raw save, raw artifact остается у запуска, run получает 
 - train_baseline;
 - train_catboost.
 
+Рядом с формой есть help-блок: он объясняет, что страница скачивает Binance Spot
+OHLCV candles, показывает примеры `BTCUSDT` и `1h`, описывает `target_horizon`
+и перечисляет datasets/models/metrics/reports, которые появляются после запуска.
+
 После отправки формы view передает cleaned form data в `BinancePipelineUseCase`.
 Сам use case скачивает OHLCV через `BinanceMarketDataProvider`, создает
 `PipelineRun`, сохраняет raw Binance dataset как parquet в `media/datasets/raw/`
@@ -660,6 +673,11 @@ raw save, raw artifact остается у запуска, run получает 
 Если обе модели выключены, форма показывает validation error и use case не
 запускается. Если ошибка случилась после создания run, пользователь попадает на
 `/runs/<id>/`, где видны `failed` status и `error_message`.
+
+Run list `/runs/` теперь содержит короткое объяснение статусов. Run detail
+`/runs/<id>/` содержит notes перед секциями `DatasetArtifact`, `ModelArtifact`,
+`MetricSnapshot`, `ReportArtifact` и `Stability by Period`, включая подсказку
+по чтению confusion matrix.
 
 ## Что делает run_csv_pipeline command
 

@@ -82,3 +82,15 @@ class DashboardViewTests(TestCase):
             "Запусков пока нет. Запустите Binance pipeline или загрузите CSV dataset.",
             response.content.decode(),
         )
+
+    def test_run_list_explains_statuses(self):
+        response = self.client.get("/runs/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Каждый run - одна попытка pipeline", html)
+        self.assertIn("created", html)
+        self.assertIn("running", html)
+        self.assertIn("success", html)
+        self.assertIn("failed", html)
+        self.assertIn("error_message", html)

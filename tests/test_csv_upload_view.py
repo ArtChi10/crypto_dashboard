@@ -29,6 +29,9 @@ class CsvUploadViewTests(TestCase):
         content = response.content.decode().lower()
         self.assertIn("csv", content)
         self.assertIn("symbol", content)
+        self.assertIn("required columns", content)
+        self.assertIn("sample_ohlcv.csv", content)
+        self.assertIn("timestamp", content)
 
     def test_dashboard_contains_upload_link(self):
         response = self.client.get("/")

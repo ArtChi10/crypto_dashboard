@@ -89,6 +89,9 @@
 
     <section class="section" aria-label="Dataset artifacts">
         <h2>DatasetArtifact</h2>
+        <div class="help-panel help-panel--compact">
+            <p>DatasetArtifact показывает datasets, созданные во время запуска: raw input, processed data и final dataset с features и target.</p>
+        </div>
         {% if dataset_artifacts %}
             <div class="table-wrap">
                 <table>
@@ -127,6 +130,9 @@
 
     <section class="section" aria-label="Model artifacts">
         <h2>ModelArtifact</h2>
+        <div class="help-panel help-panel--compact">
+            <p>ModelArtifact показывает сохранённые models и размеры train, validation и test splits, использованные при обучении.</p>
+        </div>
         {% if model_artifacts %}
             <div class="table-wrap">
                 <table>
@@ -169,6 +175,9 @@
 
     <section class="section" aria-label="Metric snapshots">
         <h2>MetricSnapshot</h2>
+        <div class="help-panel help-panel--compact">
+            <p>MetricSnapshot содержит test metrics по каждой модели. Confusion matrix читается как <code class="inline-code">[[true negatives, false positives], [false negatives, true positives]]</code>.</p>
+        </div>
         {% if metric_snapshots %}
             <div class="table-wrap">
                 <table>
@@ -219,6 +228,9 @@
                     <a class="file-link" href="{{ stability_table.file_url }}">Open full CSV</a>
                 {% endif %}
             </div>
+            <div class="help-panel help-panel--compact">
+                <p>Stability by Period показывает, как accuracy, f1 и roc_auc менялись между временными периодами и моделями.</p>
+            </div>
             {% if stability_table.preview_unavailable %}
                 <p class="empty-state">
                     Stability preview unavailable.
@@ -264,6 +276,9 @@
 
     <section class="section" aria-label="Report artifacts">
         <h2>ReportArtifact</h2>
+        <div class="help-panel help-panel--compact">
+            <p>ReportArtifact содержит PNG и CSV reports: target distribution, metric plots, feature importance и stability outputs.</p>
+        </div>
         {% if report_artifacts %}
             <div class="report-gallery">
                 {% for artifact in report_artifacts %}

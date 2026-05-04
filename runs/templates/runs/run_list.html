@@ -13,6 +13,17 @@
         </div>
     </div>
 
+    <section class="help-panel" aria-label="Run status help">
+        <h2 class="help-panel__title">Как читать историю запусков</h2>
+        <p>Каждый run - одна попытка pipeline. Новые рабочие запуски создаются через Binance page, CSV upload или CLI.</p>
+        <ul class="help-list">
+            <li><code class="inline-code">created</code> - metadata record exists, но pipeline не запускался. Такие старые записи могли остаться до упрощения Dashboard.</li>
+            <li><code class="inline-code">running</code> - pipeline сейчас выполняется.</li>
+            <li><code class="inline-code">success</code> - artifacts, metrics и reports созданы.</li>
+            <li><code class="inline-code">failed</code> - ошибка сохранена в <code class="inline-code">error_message</code>.</li>
+        </ul>
+    </section>
+
     {% if page_obj.object_list %}
         <div class="table-wrap">
             <table>
@@ -86,8 +97,7 @@
         {% endif %}
     {% else %}
         <p class="empty-state">
-            Запусков pipeline пока нет. Когда metadata DB получит записи PipelineRun, они
-            появятся здесь.
+            Запусков пока нет. Запустите Binance pipeline или загрузите CSV dataset.
         </p>
     {% endif %}
 {% endblock %}

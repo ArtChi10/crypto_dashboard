@@ -258,6 +258,9 @@ http://127.0.0.1:8000/binance/
 ```
 
 Выберите symbol, interval, date range, target horizon и модели.
+Страница также содержит короткую contextual help-подсказку: что такое Binance
+Spot OHLCV candles, примеры `BTCUSDT`/`1h`, смысл `target_horizon` и какие
+artifacts появятся после запуска.
 
 2. Для CSV откройте:
 
@@ -266,7 +269,9 @@ http://127.0.0.1:8000/upload/
 ```
 
 Загрузите CSV с колонками `timestamp`, `open`, `high`, `low`, `close`,
-`volume`, `symbol`.
+`volume`, `symbol`. UI-подсказка на странице отдельно выделяет required columns,
+recommended `symbol`, sample path `data/samples/sample_ohlcv.csv` и объясняет,
+что upload сохраняет raw artifact, а затем запускает общий ML pipeline.
 
 3. После запуска pipeline результат открывается на `/runs/<id>/`; всю историю
 можно смотреть на `/runs/`.
@@ -456,7 +461,10 @@ http://127.0.0.1:8000/runs/
 ```
 
 На странице `/runs/` отображается таблица `PipelineRun` с пагинацией по 25
-записей на страницу.
+записей на страницу. Над таблицей есть короткая подсказка по статусам:
+`created`, `running`, `success`, `failed`. После упрощения Dashboard новые
+`created` records не должны появляться через `/`, но старые metadata records
+могут оставаться в истории.
 
 Детальная страница запуска:
 
@@ -474,6 +482,12 @@ http://127.0.0.1:8000/runs/1/
 - `MetricSnapshot`;
 - `ReportArtifact`;
 - сообщение об ошибке, если оно записано в `PipelineRun.error_message`.
+
+Перед основными секциями detail page есть короткие contextual notes:
+`DatasetArtifact` объясняет raw/processed/final datasets, `ModelArtifact` -
+сохраненные models и row counts, `MetricSnapshot` - test metrics и confusion
+matrix, `ReportArtifact` - PNG/CSV reports, а `Stability by Period` - метрики
+по временным периодам.
 
 Для artifacts, которые лежат внутри `MEDIA_ROOT`, `file_path` показывается как
 ссылка вида `/media/...`. Для model artifacts страница выводит summary из

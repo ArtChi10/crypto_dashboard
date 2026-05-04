@@ -16,58 +16,71 @@
     <section class="section" aria-label="Binance pipeline form">
         <h2>Новый запуск из Binance</h2>
 
-        <form class="form-panel" method="post">
-            {% csrf_token %}
+        <div class="form-with-help">
+            <form class="form-panel" method="post">
+                {% csrf_token %}
 
-            {{ form.non_field_errors }}
+                {{ form.non_field_errors }}
 
-            <div class="form-grid">
-                <p class="form-row">
-                    {{ form.symbol.label_tag }}
-                    {{ form.symbol }}
-                    {{ form.symbol.errors }}
-                </p>
+                <div class="form-grid">
+                    <p class="form-row">
+                        {{ form.symbol.label_tag }}
+                        {{ form.symbol }}
+                        {{ form.symbol.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.interval.label_tag }}
-                    {{ form.interval }}
-                    {{ form.interval.errors }}
-                </p>
+                    <p class="form-row">
+                        {{ form.interval.label_tag }}
+                        {{ form.interval }}
+                        {{ form.interval.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.start_date.label_tag }}
-                    {{ form.start_date }}
-                    {{ form.start_date.errors }}
-                </p>
+                    <p class="form-row">
+                        {{ form.start_date.label_tag }}
+                        {{ form.start_date }}
+                        {{ form.start_date.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.end_date.label_tag }}
-                    {{ form.end_date }}
-                    {{ form.end_date.errors }}
-                </p>
+                    <p class="form-row">
+                        {{ form.end_date.label_tag }}
+                        {{ form.end_date }}
+                        {{ form.end_date.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.target_horizon.label_tag }}
-                    {{ form.target_horizon }}
-                    {{ form.target_horizon.errors }}
-                </p>
+                    <p class="form-row">
+                        {{ form.target_horizon.label_tag }}
+                        {{ form.target_horizon }}
+                        {{ form.target_horizon.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.train_baseline }}
-                    {{ form.train_baseline.label_tag }}
-                    {{ form.train_baseline.errors }}
-                </p>
+                    <p class="form-row">
+                        {{ form.train_baseline }}
+                        {{ form.train_baseline.label_tag }}
+                        {{ form.train_baseline.errors }}
+                    </p>
 
-                <p class="form-row">
-                    {{ form.train_catboost }}
-                    {{ form.train_catboost.label_tag }}
-                    {{ form.train_catboost.errors }}
-                </p>
-            </div>
+                    <p class="form-row">
+                        {{ form.train_catboost }}
+                        {{ form.train_catboost.label_tag }}
+                        {{ form.train_catboost.errors }}
+                    </p>
+                </div>
 
-            <div class="toolbar">
-                <button type="submit">Скачать Binance data и запустить pipeline</button>
-            </div>
-        </form>
+                <div class="toolbar">
+                    <button type="submit">Скачать Binance data и запустить pipeline</button>
+                </div>
+            </form>
+
+            <aside class="help-panel" aria-label="Binance pipeline help">
+                <h3 class="help-panel__title">Что произойдёт</h3>
+                <ul class="help-list">
+                    <li>Страница скачивает OHLCV candles из Binance Spot API.</li>
+                    <li>После запуска создаются raw, processed и final datasets, models, metrics и reports.</li>
+                    <li>Пример symbol: <code class="inline-code">BTCUSDT</code>. Пример interval: <code class="inline-code">1h</code>.</li>
+                    <li><code class="inline-code">target_horizon</code> означает, через сколько свечей проверяем, вырос ли close.</li>
+                    <li>Для быстрой проверки выберите короткий date range.</li>
+                </ul>
+            </aside>
+        </div>
     </section>
 {% endblock %}
