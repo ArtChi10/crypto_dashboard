@@ -73,6 +73,11 @@ The recommended first benchmark is `BTCUSDT`, `1h`, `2025-01-01` to
 `2025-07-01`. The manifest guide is
 [`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
 
+The first real-data EDA report is available at
+[`docs/real_data_eda.md`](real_data_eda.md). It is generated from a frozen
+Binance dataset and summarizes schema/data quality, price and volume behavior,
+returns, rolling volatility, and target balance across horizons `1,3,6,12`.
+
 ## 5. Target Definition
 
 The current target is:
@@ -227,9 +232,10 @@ This sample experiment is a reproducibility and pipeline sanity check only. It
 does not provide evidence of real market predictability.
 
 A real-data benchmark should start by freezing the Binance dataset and checking
-its manifest before running walk-forward, ablation, stability, or Forecast
-Replay experiments. The frozen input improves reproducibility, but it still does
-not make metrics evidence of trading profitability.
+its manifest, then reviewing the real-data EDA report before running
+walk-forward, ablation, stability, or Forecast Replay experiments. The frozen
+input and EDA improve reproducibility, but they still do not make metrics
+evidence of trading profitability.
 
 ## 12. Known Limitations
 

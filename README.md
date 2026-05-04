@@ -255,6 +255,13 @@ dataset SHA256. `data/real/` is ignored by git, so generated real-market data
 stays local.
 
 See the [real data dataset manifest guide](docs/real_data_dataset_manifest.md).
+After freezing a dataset, generate the first real-data EDA layer with:
+
+```powershell
+.crypto\Scripts\python.exe scripts\generate_real_data_eda.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_eda.md --output-dir docs\assets\real_data_eda --horizons 1,3,6,12
+```
+
+See the [real data EDA report](docs/real_data_eda.md).
 
 ## Running Pipelines
 
@@ -365,6 +372,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Research report](docs/research_report.md)
 - [Model card](docs/model_card.md)
 - [Real data dataset manifest guide](docs/real_data_dataset_manifest.md)
+- [Real data EDA report](docs/real_data_eda.md)
 - [Sample dataset EDA report](docs/eda_sample_dataset.md)
 - [Sample experiment summary](docs/experiment_summary_sample.md)
 - [Storage architecture](docs/storage_architecture.md)

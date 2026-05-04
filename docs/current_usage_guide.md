@@ -480,6 +480,16 @@ Smoke command на коротком периоде:
 попадают в commit. Публичное описание schema manifest лежит в
 [`docs/real_data_dataset_manifest.md`](real_data_dataset_manifest.md).
 
+После freeze можно сгенерировать real-data EDA report:
+
+```powershell
+.crypto\Scripts\python.exe scripts\generate_real_data_eda.py --dataset data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.parquet --manifest data\real\binance_BTCUSDT_1h_2025-01-01_2025-01-10.manifest.json --output-doc docs\real_data_eda.md --output-dir docs\assets\real_data_eda --horizons 1,3,6,12
+```
+
+Report `docs/real_data_eda.md` показывает manifest, schema/data quality,
+price/volume overview, returns distribution, rolling volatility и target balance
+по horizons `1,3,6,12`.
+
 Важно: это real market data для research benchmark. Оно не доказывает trading
 performance и не является основанием для live trading decisions.
 
