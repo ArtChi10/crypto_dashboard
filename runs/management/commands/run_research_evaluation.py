@@ -9,7 +9,12 @@ from mlcore.evaluation.ablation import FeatureAblationService
 from mlcore.evaluation.walk_forward import WalkForwardEvaluationService
 from mlcore.repositories.dataset_repository import DatasetRepository
 from mlcore.training.baseline_trainer import BaselineTrainer
+from mlcore.training.catboost_trainer import CatBoostTrainer
 from mlcore.training.dummy_trainer import DummyBaselineTrainer
+
+
+def make_research_catboost_trainer() -> CatBoostTrainer:
+    return CatBoostTrainer(iterations=20, depth=4, learning_rate=0.1, verbose=False)
 
 
 class Command(BaseCommand):
@@ -18,6 +23,7 @@ class Command(BaseCommand):
     TRAINER_FACTORIES = {
         "dummy": DummyBaselineTrainer,
         "baseline": BaselineTrainer,
+        "catboost": make_research_catboost_trainer,
     }
 
     def add_arguments(self, parser):
@@ -40,7 +46,7 @@ class Command(BaseCommand):
             "--trainer",
             choices=sorted(self.TRAINER_FACTORIES),
             default="dummy",
-            help="Trainer to evaluate. Choices: dummy, baseline. Default: dummy.",
+            help="Trainer to evaluate. Choices: dummy, baseline, catboost. Default: dummy.",
         )
         parser.add_argument(
             "--run-walk-forward",

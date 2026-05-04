@@ -279,14 +279,16 @@ Supported research CLI trainers:
 
 - `dummy`
 - `baseline`
+- `catboost`
 
 Outputs:
 
 - `walk_forward_<trainer>.csv`
 - `ablation_<trainer>.csv`
 
-CatBoost is intentionally not included in this research command yet, so the CLI
-stays fast and stable for local checks.
+CatBoost research evaluation uses lighter CLI parameters than the main pipeline,
+but it can still be slower than `dummy` or `baseline`. Use the simpler trainers
+for quick checks.
 
 ## Outputs
 

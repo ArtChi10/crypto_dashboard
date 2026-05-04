@@ -272,6 +272,12 @@ Run offline research checks on an existing final dataset:
 .crypto\Scripts\python.exe manage.py run_research_evaluation --dataset tmp_research_check/final.parquet --output-dir tmp_research_check/out --trainer dummy --run-walk-forward --run-ablation --train-window 40 --test-window 20
 ```
 
+Supported research CLI trainers are `dummy`, `baseline`, and `catboost`.
+CatBoost uses lighter research defaults in this command, but it can still be
+slower than the simpler trainers. Fold-level one-class training failures are
+recorded as `error_message` rows by the evaluation services instead of weakening
+trainer validation.
+
 Inspect results:
 
 ```text

@@ -754,8 +754,9 @@ checks по уже готовому final dataset.
 - `WalkForwardEvaluationService` и сохранять `walk_forward_<trainer>.csv`;
 - `FeatureAblationService` и сохранять `ablation_<trainer>.csv`.
 
-Доступные trainers в CLI: `dummy` и `baseline`. CatBoost пока специально не
-добавлен, чтобы command оставалась быстрой для локальных research checks.
+Доступные trainers в CLI: `dummy`, `baseline` и `catboost`. CatBoost запускается
+с быстрыми research-параметрами, но всё равно может быть медленнее простых
+trainers. Для быстрых checks удобнее начинать с `dummy` или `baseline`.
 
 Важно: command не создает `PipelineRun`, не пишет в Django DB и не создает
 `ReportArtifact`. Это просто способ воспроизводимо сохранить research таблицы в

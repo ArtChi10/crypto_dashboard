@@ -431,7 +431,7 @@ Management command `run_binance_pipeline` скачивает OHLCV candles че�
 
 Management command `run_research_evaluation` запускает offline research checks
 по уже подготовленному final dataset. Он не создает `PipelineRun`, не пишет в
-SQLite, не создает `ReportArtifact` и не запускает main pipeline. Результаты
+Django DB, не создает `ReportArtifact` и не запускает main pipeline. Результаты
 сохраняются обычными CSV-файлами в `--output-dir`.
 
 ```powershell
@@ -443,14 +443,14 @@ SQLite, не создает `ReportArtifact` и не запускает main pip
 - `--dataset` - путь к final `.parquet` или `.csv` dataset;
 - `--output-dir` - директория для CSV outputs, по умолчанию `research_outputs`;
 - `--target-col` - имя target column, по умолчанию `target`;
-- `--trainer` - `dummy` или `baseline`;
+- `--trainer` - `dummy`, `baseline` или `catboost`;
 - `--run-walk-forward` - сохранить `walk_forward_<trainer>.csv`;
 - `--run-ablation` - сохранить `ablation_<trainer>.csv`;
 - `--train-window`, `--test-window`, `--step` - параметры walk-forward windows.
 
-Для ablation command делает простой 70/30 split по `timestamp`. Для CatBoost
-CLI-поддержка отложена, чтобы команда оставалась быстрой и стабильной для
-ручных research checks.
+Для ablation command делает простой 70/30 split по `timestamp`. CatBoost в
+research CLI использует быстрые параметры, но все равно может быть медленнее
+`dummy` и `baseline`; для быстрых checks используйте более простые trainers.
 
 ## Как открыть /runs/ и /runs/<id>/
 

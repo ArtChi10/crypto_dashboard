@@ -85,6 +85,58 @@ class RunResearchEvaluationCommandTests(unittest.TestCase):
         self.assertEqual(result.loc[0, "experiment"], "all_features")
         self.assertIn(ablation_path.as_posix(), out.getvalue())
 
+    def test_command_creates_catboost_walk_forward_output(self):
+        out = StringIO()
+
+        call_command(
+            "run_research_evaluation",
+            "--dataset",
+            str(self.parquet_path),
+            "--output-dir",
+            str(self.output_dir),
+            "--trainer",
+            "catboost",
+            "--run-walk-forward",
+            "--train-window",
+            "20",
+            "--test-window",
+            "10",
+            stdout=out,
+        )
+
+        walk_forward_path = self.output_dir / "walk_forward_catboost.csv"
+        self.assertTrue(walk_forward_path.exists())
+        result = pd.read_csv(walk_forward_path)
+        self.assertEqual(len(result), 4)
+        self.assertIn("fold_id", result.columns)
+        self.assertIn("accuracy", result.columns)
+        self.assertIn("error_message", result.columns)
+        self.assertIn(walk_forward_path.as_posix(), out.getvalue())
+
+    def test_command_creates_catboost_ablation_output(self):
+        out = StringIO()
+
+        call_command(
+            "run_research_evaluation",
+            "--dataset",
+            str(self.csv_path),
+            "--output-dir",
+            str(self.output_dir),
+            "--trainer",
+            "catboost",
+            "--run-ablation",
+            stdout=out,
+        )
+
+        ablation_path = self.output_dir / "ablation_catboost.csv"
+        self.assertTrue(ablation_path.exists())
+        result = pd.read_csv(ablation_path)
+        self.assertIn("experiment", result.columns)
+        self.assertIn("accuracy", result.columns)
+        self.assertIn("error_message", result.columns)
+        self.assertIn("all_features", result["experiment"].tolist())
+        self.assertIn(ablation_path.as_posix(), out.getvalue())
+
     def test_invalid_dataset_path_raises_command_error(self):
         with self.assertRaises(CommandError):
             call_command(
