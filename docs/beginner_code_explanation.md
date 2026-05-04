@@ -539,13 +539,20 @@ metadata.
 - `ReportArtifact` для stability plot PNG;
 - `ReportArtifact` для CatBoost feature importance PNG.
 
+В `runs/models.py` эти типы теперь записаны явно в Django choices:
+`ModelArtifact.ModelType` знает `dummy`, `baseline`, `catboost`, а
+`ReportArtifact.ReportType` знает `target_distribution`, `metrics_plot`,
+`feature_importance`, `stability_table` и `stability_plot`. Это помогает admin,
+forms и будущему коду показывать те же значения, которые реально сохраняет
+pipeline.
+
 Если `roc_auc` равен `None`, metrics comparison PNG не падает: это значение
 показывается как `N/A`.
 Если CatBoost выключен или importances пустые, feature importance PNG не
 создается.
 
 Он не обучает модели, не строит признаки, не скачивает данные и не меняет UI.
-Он только записывает в SQLite ссылки на уже созданные файлы и уже посчитанные
+Он только записывает в Django DB ссылки на уже созданные файлы и уже посчитанные
 metrics.
 
 Если путь к файлу абсолютный и находится внутри `MEDIA_ROOT`, service сохраняет

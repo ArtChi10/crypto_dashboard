@@ -63,15 +63,16 @@ class RunPersistenceServiceTests(TestCase):
 
         dummy_model = ModelArtifact.objects.get(
             run=run,
-            model_type="dummy",
+            model_type=ModelArtifact.ModelType.DUMMY,
         )
+        self.assertEqual(ModelArtifact.ModelType.DUMMY, "dummy")
         self.assertEqual(dummy_model.file_path, "models/dummy.joblib")
         self.assertEqual(dummy_model.params_json["feature_columns"], ["feature_1", "feature_2"])
         self.assertEqual(dummy_model.params_json["train_rows"], 42)
 
         dummy_metrics = MetricSnapshot.objects.get(
             run=run,
-            model_type="dummy",
+            model_type=ModelArtifact.ModelType.DUMMY,
         )
         self.assertEqual(dummy_metrics.accuracy, 0.7)
         self.assertEqual(dummy_metrics.precision, 0.0)
@@ -116,13 +117,15 @@ class RunPersistenceServiceTests(TestCase):
         self.assertEqual(feature_report_artifact.file_path, "reports/feature_importance.png")
         stability_table_artifact = ReportArtifact.objects.get(
             run=run,
-            report_type="stability_table",
+            report_type=ReportArtifact.ReportType.STABILITY_TABLE,
         )
+        self.assertEqual(ReportArtifact.ReportType.STABILITY_TABLE, "stability_table")
         self.assertEqual(stability_table_artifact.file_path, "reports/stability_table.csv")
         stability_plot_artifact = ReportArtifact.objects.get(
             run=run,
-            report_type="stability_plot",
+            report_type=ReportArtifact.ReportType.STABILITY_PLOT,
         )
+        self.assertEqual(ReportArtifact.ReportType.STABILITY_PLOT, "stability_plot")
         self.assertEqual(stability_plot_artifact.file_path, "reports/stability_plot.png")
 
         self.assertEqual(saved.processed_dataset_artifact, processed_artifact)
@@ -152,7 +155,7 @@ class RunPersistenceServiceTests(TestCase):
         self.assertIsNone(saved.baseline_metric_snapshot)
         self.assertEqual(
             set(ModelArtifact.objects.filter(run=run).values_list("model_type", flat=True)),
-            {"dummy", ModelArtifact.ModelType.CATBOOST},
+            {ModelArtifact.ModelType.DUMMY, ModelArtifact.ModelType.CATBOOST},
         )
 
     def test_save_full_pipeline_result_allows_missing_catboost_result(self):
@@ -169,7 +172,7 @@ class RunPersistenceServiceTests(TestCase):
         self.assertIsNone(saved.catboost_metric_snapshot)
         self.assertEqual(
             set(ModelArtifact.objects.filter(run=run).values_list("model_type", flat=True)),
-            {"dummy", ModelArtifact.ModelType.BASELINE},
+            {ModelArtifact.ModelType.DUMMY, ModelArtifact.ModelType.BASELINE},
         )
 
     def test_save_full_pipeline_result_uses_transaction_atomic(self):

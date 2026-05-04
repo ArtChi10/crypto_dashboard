@@ -706,6 +706,11 @@ metrics. Его задача только сохранить metadata в Django 
 - `ReportArtifact` для `feature_importance`, если CatBoost обучался и вернул
   feature importances.
 
+Эти значения явно отражены в Django `TextChoices`: `ModelArtifact.ModelType`
+содержит `dummy`, `baseline`, `catboost`, а `ReportArtifact.ReportType`
+содержит `target_distribution`, `metrics_plot`, `feature_importance`,
+`stability_table` и `stability_plot`.
+
 Если у метрики `roc_auc` значение `None`, metrics comparison report не падает:
 на PNG это место подписывается как `N/A`.
 Если CatBoost выключен или importances пустые, feature importance report не

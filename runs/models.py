@@ -53,6 +53,7 @@ class DatasetArtifact(models.Model):
 
 class ModelArtifact(models.Model):
     class ModelType(models.TextChoices):
+        DUMMY = "dummy", "Dummy"
         BASELINE = "baseline", "Baseline"
         CATBOOST = "catboost", "CatBoost"
 
@@ -95,6 +96,8 @@ class ReportArtifact(models.Model):
         TARGET_DISTRIBUTION = "target_distribution", "Target distribution"
         FEATURE_IMPORTANCE = "feature_importance", "Feature importance"
         METRICS_PLOT = "metrics_plot", "Metrics plot"
+        STABILITY_TABLE = "stability_table", "Stability table"
+        STABILITY_PLOT = "stability_plot", "Stability plot"
 
     run = models.ForeignKey(
         PipelineRun,
