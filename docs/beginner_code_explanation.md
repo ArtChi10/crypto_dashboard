@@ -313,6 +313,40 @@ without_moving_average
 Сейчас это ручной research-инструмент: он не сохраняет artifacts, не пишет в
 Django DB и не подключен к основному pipeline/UI.
 
+## Что делает ForecastReplayService
+
+`ForecastReplayService` нужен для режима Forecast Replay / Reality Check.
+
+Идея простая:
+
+1. Есть history candles, на которых уже можно строить rolling/past features.
+2. Есть future candles, которые нужны для проверки, что потом случилось.
+3. Есть уже обученная classification-модель.
+4. Service строит replay-таблицу: что модель сказала на replay-точках и каким
+   оказался фактический `future_close`.
+
+Важно: future candles объединяются с history только для построения past features
+на каждой replay-точке. Для prediction input service берет только переданные
+`feature_columns`. `future_close`, `target`, `timestamp` и `symbol` не должны
+попадать в features.
+
+Replay table содержит:
+
+- `timestamp`;
+- `close`;
+- `future_close`;
+- `actual_direction`;
+- `predicted_direction`;
+- `predicted_probability`;
+- `is_correct`.
+
+`ForecastReplayReportService` строит PNG-график: historical close, replay close
+и markers, где видно predicted up/down и correct/incorrect. Это
+replay/backtest visualization, не live price forecasting.
+
+Сейчас это reusable service/report layer. Он еще не подключен к `/binance/`,
+основному pipeline orchestration или run detail UI.
+
 ## Что делает Evaluator
 
 `Evaluator` считает качество модели.
@@ -542,9 +576,9 @@ metadata.
 В `runs/models.py` эти типы теперь записаны явно в Django choices:
 `ModelArtifact.ModelType` знает `dummy`, `baseline`, `catboost`, а
 `ReportArtifact.ReportType` знает `target_distribution`, `metrics_plot`,
-`feature_importance`, `stability_table` и `stability_plot`. Это помогает admin,
-forms и будущему коду показывать те же значения, которые реально сохраняет
-pipeline.
+`feature_importance`, `stability_table`, `stability_plot`, `forecast_replay` и
+`forecast_replay_table`. Это помогает admin, forms и будущему коду показывать
+те же значения, которые реально сохраняет pipeline или future replay flow.
 
 Если `roc_auc` равен `None`, metrics comparison PNG не падает: это значение
 показывается как `N/A`.
@@ -836,6 +870,7 @@ raw data
 - Research walk-forward folds без random shuffle.
 - Research walk-forward evaluation по folds.
 - Research feature ablation по группам признаков.
+- Forecast Replay core service и PNG report service.
 - Метрики качества.
 - Research-анализ stability metrics по временным периодам.
 - Dummy baseline trainer.

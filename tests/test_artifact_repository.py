@@ -106,6 +106,34 @@ class ArtifactRepositoryTests(unittest.TestCase):
         )
         self.assertTrue(path.parent.is_dir())
 
+    def test_forecast_replay_report_path_uses_png_extension(self):
+        path = self.repo.report_path(
+            "forecast_replay",
+            run_id=12,
+            timestamp="20260427_120501",
+            extension="png",
+        )
+
+        self.assertEqual(
+            path,
+            self.base_dir / "reports" / "forecast_replay_run_12_20260427_120501.png",
+        )
+        self.assertTrue(path.parent.is_dir())
+
+    def test_forecast_replay_table_report_path_uses_csv_extension(self):
+        path = self.repo.report_path(
+            "forecast_replay_table",
+            run_id=12,
+            timestamp="20260427_120501",
+            extension="csv",
+        )
+
+        self.assertEqual(
+            path,
+            self.base_dir / "reports" / "forecast_replay_table_run_12_20260427_120501.csv",
+        )
+        self.assertTrue(path.parent.is_dir())
+
     def test_invalid_types_raise_value_error(self):
         with self.assertRaisesRegex(ValueError, "Invalid artifact_type"):
             self.repo.dataset_path(

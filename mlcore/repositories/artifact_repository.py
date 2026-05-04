@@ -16,6 +16,8 @@ class ArtifactRepository:
             "metrics_plot",
             "stability_table",
             "stability_plot",
+            "forecast_replay",
+            "forecast_replay_table",
         }
     )
 

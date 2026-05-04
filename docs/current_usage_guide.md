@@ -111,7 +111,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
   запуска pipeline.
 - `ArtifactRepository` для построения путей artifacts.
   Он централизованно знает все dataset/model/report types, включая
-  `stability_table` и `stability_plot`.
+  `stability_table`, `stability_plot`, `forecast_replay` и
+  `forecast_replay_table`.
 - `DatasetRepository` для сохранения и загрузки `.csv` и `.parquet`.
 - `BinanceMarketDataProvider` для загрузки OHLCV candles из Binance Spot REST API
   в pandas `DataFrame`.
@@ -126,6 +127,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
   интеграции в основной pipeline.
 - `FeatureAblationService` для research-сравнения групп признаков через
   `all_features` и `without_<group>` experiments.
+- `ForecastReplayService` для reusable classification replay/reality check
+  таблицы по history/future candles и уже обученной модели.
 - `Evaluator` для расчета classification metrics.
 - `PeriodStabilityAnalysisService` для research-анализа metrics по временным
   сегментам predictions.
@@ -140,6 +143,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
 - `MetricsComparisonReportService` для PNG-сравнения metrics по моделям.
 - `PeriodStabilityReportService` для CSV/PNG отчета стабильности metrics по
   временным периодам test predictions.
+- `ForecastReplayReportService` для PNG-графика history/replay close и
+  predicted up/down markers.
 - `FeatureImportanceReportService` для PNG-отчета важности CatBoost-признаков.
 - `FullPipelineService` для ручного in-memory запуска preparation + training из Python.
 - `RunPersistenceService` для сохранения результатов pipeline в Django metadata.
@@ -157,6 +162,8 @@ Docker stack использует PostgreSQL через `DATABASE_URL`, выпо
   синхронно.
 - Dashboard не запускает pipeline напрямую; он только показывает overview,
   последние runs и ссылки на `/binance/`, `/upload/`, `/runs/`.
+- Forecast Replay пока добавлен как reusable service/report layer. Он еще не
+  подключен к `/binance/`, основному pipeline orchestration или run detail UI.
 
 ## Окружение
 
@@ -618,6 +625,40 @@ predictions. Он не обучает модели. На вход нужен `Da
 - `stability_table` как CSV в `media/reports/`;
 - `stability_plot` как PNG в `media/reports/`.
 
+## Как вручную понимать ForecastReplayService
+
+`ForecastReplayService` - это reusable core service для режима Forecast Replay /
+Reality Check. Он принимает:
+
+- `history_df` с уже известными candles;
+- `future_df` с последующими candles для проверки факта;
+- обученную classification-модель;
+- `feature_columns`;
+- `horizon` и `replay_steps`.
+
+Service объединяет history и future только для построения rolling/past features,
+затем берет replay-точки из будущего окна и вызывает `model.predict()` только на
+переданных `feature_columns`. `future_close` не используется как feature: он
+нужен только для проверки факта `actual_direction = 1 if future_close > close`.
+
+Replay output columns:
+
+```text
+timestamp, close, future_close, actual_direction, predicted_direction,
+predicted_probability, is_correct
+```
+
+Если model поддерживает `predict_proba`, service сохраняет probability класса 1
+в `predicted_probability`; иначе там будет `None`.
+
+`ForecastReplayReportService` строит PNG-график: historical close, replay close
+и markers predicted up/down с correct/incorrect цветом. Artifact types уже
+зарезервированы как `forecast_replay` для PNG и `forecast_replay_table` для CSV,
+но автоматическая интеграция в Binance UI будет отдельной задачей.
+
+Важно: это replay/backtest visualization для classification model, а не live
+price forecasting и не trading signal.
+
 ## Как вручную проверить WalkForwardValidationService
 
 `WalkForwardValidationService` - это независимый research utility для
@@ -709,7 +750,8 @@ metrics. Его задача только сохранить metadata в Django 
 Эти значения явно отражены в Django `TextChoices`: `ModelArtifact.ModelType`
 содержит `dummy`, `baseline`, `catboost`, а `ReportArtifact.ReportType`
 содержит `target_distribution`, `metrics_plot`, `feature_importance`,
-`stability_table` и `stability_plot`.
+`stability_table`, `stability_plot`, `forecast_replay` и
+`forecast_replay_table`.
 
 Если у метрики `roc_auc` значение `None`, metrics comparison report не падает:
 на PNG это место подписывается как `N/A`.

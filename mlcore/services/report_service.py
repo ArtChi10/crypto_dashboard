@@ -235,6 +235,123 @@ class PeriodStabilityReportService:
         plt.close(figure)
 
 
+class ForecastReplayReportService:
+    REQUIRED_HISTORY_COLUMNS = ("timestamp", "close")
+    REQUIRED_REPLAY_COLUMNS = (
+        "timestamp",
+        "close",
+        "future_close",
+        "predicted_direction",
+        "predicted_probability",
+        "is_correct",
+    )
+
+    def build(
+        self,
+        history_df: pd.DataFrame,
+        replay_df: pd.DataFrame,
+        path: str | Path,
+    ) -> Path:
+        self._raise_for_missing_columns(history_df, self.REQUIRED_HISTORY_COLUMNS, "history_df")
+        self._raise_for_missing_columns(replay_df, self.REQUIRED_REPLAY_COLUMNS, "replay_df")
+        if replay_df.empty:
+            raise ValueError("replay_df must not be empty.")
+
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        history = self._time_sorted(history_df, required_columns=self.REQUIRED_HISTORY_COLUMNS)
+        replay = self._time_sorted(replay_df, required_columns=self.REQUIRED_REPLAY_COLUMNS)
+
+        figure, axis = plt.subplots(figsize=(8, 4.2))
+        axis.plot(
+            history["timestamp"],
+            history["close"],
+            color="#667085",
+            linewidth=1.6,
+            label="historical close",
+        )
+        axis.plot(
+            replay["timestamp"],
+            replay["close"],
+            color="#175cd3",
+            linewidth=1.6,
+            label="replay close",
+        )
+        self._plot_prediction_markers(axis, replay)
+
+        axis.set_title("Forecast replay")
+        axis.set_xlabel("timestamp")
+        axis.set_ylabel("close")
+        axis.grid(axis="y", color="#d9dee7", linewidth=0.8, alpha=0.8)
+        axis.legend(fontsize=8)
+        figure.autofmt_xdate()
+        figure.tight_layout()
+        figure.savefig(path, format="png", dpi=120)
+        plt.close(figure)
+        return path
+
+    def _plot_prediction_markers(self, axis: Any, replay: pd.DataFrame) -> None:
+        used_labels = set()
+        for _, row in replay.iterrows():
+            predicted_up = int(row["predicted_direction"]) == 1
+            is_correct = bool(row["is_correct"])
+            marker = "^" if predicted_up else "v"
+            color = "#17663a" if is_correct else "#b42318"
+            label = self._marker_label(predicted_up=predicted_up, is_correct=is_correct)
+            if label in used_labels:
+                label = None
+            else:
+                used_labels.add(label)
+
+            axis.scatter(
+                row["timestamp"],
+                row["close"],
+                marker=marker,
+                s=72,
+                color=color,
+                edgecolors="#ffffff",
+                linewidths=0.7,
+                label=label,
+                zorder=3,
+            )
+            probability = row["predicted_probability"]
+            if pd.notna(probability):
+                axis.annotate(
+                    f"{float(probability):.2f}",
+                    (row["timestamp"], row["close"]),
+                    textcoords="offset points",
+                    xytext=(0, 8),
+                    ha="center",
+                    fontsize=8,
+                    color="#344054",
+                )
+
+    @staticmethod
+    def _marker_label(predicted_up: bool, is_correct: bool) -> str:
+        direction = "predicted up" if predicted_up else "predicted down"
+        outcome = "correct" if is_correct else "incorrect"
+        return f"{direction} {outcome}"
+
+    @staticmethod
+    def _time_sorted(df: pd.DataFrame, required_columns: tuple[str, ...]) -> pd.DataFrame:
+        sorted_df = df.loc[:, list(required_columns)].copy()
+        sorted_df["timestamp"] = pd.to_datetime(sorted_df["timestamp"])
+        sorted_df["close"] = pd.to_numeric(sorted_df["close"], errors="coerce")
+        sorted_df = sorted_df.dropna(subset=["timestamp", "close"])
+        return sorted_df.sort_values("timestamp").reset_index(drop=True)
+
+    @staticmethod
+    def _raise_for_missing_columns(
+        df: pd.DataFrame,
+        required_columns: tuple[str, ...],
+        name: str,
+    ) -> None:
+        missing_columns = [column for column in required_columns if column not in df.columns]
+        if missing_columns:
+            raise ValueError(f"{name} is missing required columns: {', '.join(missing_columns)}")
+
+
 class FeatureImportanceReportService:
     def build(
         self,

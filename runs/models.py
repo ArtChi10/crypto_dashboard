@@ -98,6 +98,8 @@ class ReportArtifact(models.Model):
         METRICS_PLOT = "metrics_plot", "Metrics plot"
         STABILITY_TABLE = "stability_table", "Stability table"
         STABILITY_PLOT = "stability_plot", "Stability plot"
+        FORECAST_REPLAY = "forecast_replay", "Forecast replay"
+        FORECAST_REPLAY_TABLE = "forecast_replay_table", "Forecast replay table"
 
     run = models.ForeignKey(
         PipelineRun,
