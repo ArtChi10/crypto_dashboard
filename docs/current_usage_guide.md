@@ -37,6 +37,30 @@ GitHub Actions CI запускает тот же базовый набор пр�
 `pull_request`: `manage.py check`, `ruff check`, `ruff format --check` и
 `manage.py test`.
 
+## Analytics / BI views
+
+Проект начинает BI-направление для self-hosted analytics stack:
+
+```text
+Django/PostgreSQL
+-> BI SQL views
+-> Grafana + Metabase
+-> Django Analytics page
+```
+
+Первый слой уже добавлен через migration app `runs`: стабильные read-only SQL
+views для PostgreSQL production:
+
+- `bi_run_metrics`;
+- `bi_artifacts`;
+- `bi_confusion_matrix`.
+
+Grafana и Metabase должны подключаться к этим views, а не к сырым Django tables.
+SQLite-compatible path в migration нужен для local tests; production BI target -
+PostgreSQL.
+
+Документация: [`docs/analytics_stack.md`](analytics_stack.md).
+
 ## Как читать research results
 
 Короткий итог текущего real-data исследования собран здесь:

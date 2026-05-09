@@ -44,6 +44,10 @@ Implemented capabilities:
   - error analysis;
   - feature ablation;
   - concise research conclusions;
+- BI SQL views for analytics:
+  - `bi_run_metrics`;
+  - `bi_artifacts`;
+  - `bi_confusion_matrix`;
 - environment-based Django settings with `.env.example`;
 - local Docker Compose stack with Django, PostgreSQL, static collection, and
   persistent media volume;
@@ -77,6 +81,8 @@ Latest known local results:
 | Production Compose config | Configured |
 | SSH CD workflow | Configured |
 | Real-data research conclusions | Available |
+| BI SQL views | Available |
+| Grafana/Metabase services | Pending |
 | HTTPS | Pending |
 | Background jobs | Pending |
 
@@ -117,6 +123,7 @@ Current public documentation:
 
 - [`README.md`](../README.md);
 - [`docs/current_usage_guide.md`](current_usage_guide.md);
+- [`docs/analytics_stack.md`](analytics_stack.md);
 - [`docs/research_report.md`](research_report.md);
 - [`docs/research_conclusions.md`](research_conclusions.md);
 - [`docs/model_card.md`](model_card.md);
@@ -149,6 +156,8 @@ Known limitations:
 - metrics are research signals and pipeline checks, not profitability claims;
 - real-data conclusions are available, but they explicitly describe the current
   model evidence as limited and not production trading readiness;
+- BI SQL views are available, but Grafana and Metabase services are not yet
+  deployed in the compose stack;
 - Binance workflows depend on network access and Binance API availability;
 - walk-forward and ablation tools are currently offline utilities, not
   first-class dashboard reports.
@@ -163,6 +172,7 @@ Potential future work:
 - confidence intervals or metric variance across folds;
 - drift monitoring and data quality alerts;
 - dashboard integration for walk-forward and ablation outputs;
+- Grafana and Metabase services wired to read-only PostgreSQL BI views;
 - HTTPS/domain setup for the server;
 - backup procedure for PostgreSQL and media volumes;
 - optional background task queue for longer runs.

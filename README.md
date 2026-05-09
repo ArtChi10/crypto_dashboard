@@ -47,6 +47,7 @@ This project is not:
   - walk-forward evaluation CLI;
   - feature ablation CLI.
 - Local script for freezing real Binance OHLCV datasets with a SHA256 manifest.
+- PostgreSQL BI SQL views for Grafana/Metabase analytics.
 
 ## Screenshots
 
@@ -396,6 +397,15 @@ Filesystem artifacts:
 The database stores paths and metadata. Large datasets, models, and reports stay
 as files.
 
+BI SQL views for PostgreSQL analytics:
+
+- `bi_run_metrics`
+- `bi_artifacts`
+- `bi_confusion_matrix`
+
+These views are the intended reporting contract for Grafana and Metabase. See
+the [analytics stack guide](docs/analytics_stack.md).
+
 ## Tests and Code Quality
 
 ```powershell
@@ -430,6 +440,7 @@ update the configured Docker Compose server after successful checks on `main`.
 - [Current usage guide](docs/current_usage_guide.md)
 - [Beginner code explanation](docs/beginner_code_explanation.md)
 - [Deployment guide](docs/deployment_guide.md)
+- [Analytics stack](docs/analytics_stack.md)
 - [Research conclusions](docs/research_conclusions.md)
 - [Research report](docs/research_report.md)
 - [Model card](docs/model_card.md)
